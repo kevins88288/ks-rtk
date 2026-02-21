@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **rtk (Rust Token Killer)** is a high-performance CLI proxy that minimizes LLM token consumption by filtering and compressing command outputs. It achieves 60-90% token savings on common development operations through smart filtering, grouping, truncation, and deduplication.
 
-This is a fork with critical fixes for git argument parsing and modern JavaScript stack support (pnpm, vitest, Next.js, TypeScript, Playwright, Prisma).
+This is ks-rtk, our fork of rtk-ai/rtk. See FORK.md for what we've changed.
 
 ### ⚠️ Name Collision Warning
 
@@ -110,18 +110,6 @@ rtk cargo clippy              # preferred (token-optimized)
 # Check all targets
 cargo clippy --all-targets
 rtk cargo clippy --all-targets
-```
-
-### Package Building
-```bash
-# Build DEB package (Linux)
-cargo install cargo-deb
-cargo deb
-
-# Build RPM package (Fedora/RHEL)
-cargo install cargo-generate-rpm
-cargo build --release
-cargo generate-rpm
 ```
 
 ## Architecture
@@ -385,43 +373,6 @@ pub fn execute_with_filter(cmd: &str, args: &[&str]) -> Result<()> {
 - Preserve stdout/stderr separation
 - Respect exit codes (0 = success, non-zero = failure)
 
-## Fork-Specific Features
-
-### PR #5: Git Argument Parsing Fix (CRITICAL)
-- **Problem**: Git flags like `--oneline`, `--cached` were rejected
-- **Solution**: Fixed Clap parsing with proper trailing_var_arg configuration
-- **Impact**: All git commands now accept native git flags
-
-### PR #6: pnpm Support
-- **New Commands**: `rtk pnpm list`, `rtk pnpm outdated`, `rtk pnpm install`
-- **Token Savings**: 70-90% reduction on package manager operations
-- **Security**: Package name validation prevents command injection
-
-### PR #9: Modern JavaScript/TypeScript Tooling (2026-01-29)
-- **New Commands**: 6 commands for T3 Stack workflows
-  - `rtk lint`: ESLint/Biome with grouped rule violations (84% reduction)
-  - `rtk tsc`: TypeScript compiler errors grouped by file/code (83% reduction)
-  - `rtk next`: Next.js build with route/bundle metrics (87% reduction)
-  - `rtk prettier`: Format checker showing files needing changes (70% reduction)
-  - `rtk playwright`: E2E test results showing failures only (94% reduction)
-  - `rtk prisma`: Prisma CLI without ASCII art (88% reduction)
-- **Shared Infrastructure**: utils.rs module for package manager auto-detection
-- **Features**: Exit code preservation, error grouping, consistent formatting
-- **Testing**: Validated on production T3 Stack project (methode-aristote/app)
-
-### Python & Go Support (2026-02-12)
-- **Python Commands**: 3 commands for Python development workflows
-  - `rtk ruff check/format`: Ruff linter/formatter with JSON (check) and text (format) parsing (80%+ reduction)
-  - `rtk pytest`: Pytest test runner with state machine text parser (90%+ reduction)
-  - `rtk pip list/outdated/install`: pip package manager with auto-detect uv (70-85% reduction)
-- **Go Commands**: 4 commands via sub-enum for Go ecosystem
-  - `rtk go test`: NDJSON line-by-line parser for interleaved events (90%+ reduction)
-  - `rtk go build`: Text filter showing errors only (80% reduction)
-  - `rtk go vet`: Text filter for issues (75% reduction)
-  - `rtk golangci-lint`: JSON parsing grouped by rule (85% reduction)
-- **Architecture**: Standalone Python commands (mirror lint/prettier), Go sub-enum (mirror git/cargo)
-- **Patterns**: JSON for structured output (ruff check, golangci-lint, pip), NDJSON streaming (go test), text state machine (pytest), text filters (go build/vet, ruff format)
-
 ## Testing Strategy
 
 ### TDD Workflow (mandatory)
@@ -455,23 +406,6 @@ Core dependencies (see Cargo.toml):
 - **ignore**: gitignore-aware file traversal
 - **colored**: Terminal output formatting
 - **serde/serde_json**: Configuration and JSON parsing
-
-## Build Optimizations
-
-Release profile (Cargo.toml:31-36):
-- `opt-level = 3`: Maximum optimization
-- `lto = true`: Link-time optimization
-- `codegen-units = 1`: Single codegen for better optimization
-- `strip = true`: Remove debug symbols
-- `panic = "abort"`: Smaller binary size
-
-## CI/CD
-
-GitHub Actions workflow (.github/workflows/release.yml):
-- Multi-platform builds (macOS, Linux x86_64/ARM64, Windows)
-- DEB/RPM package generation
-- Automated releases on version tags (v*)
-- Checksums for binary verification
 
 ## Build Verification (Mandatory)
 
@@ -521,10 +455,7 @@ hyperfine 'target/release/rtk git log -10' --warmup 3
   - Benchmark again: `hyperfine 'target/release/rtk git status' --warmup 3`
   - Compare results: startup time should be <10ms
 
-- **For cross-platform**: Test on macOS + Linux (Docker) + Windows (CI), verify shell escaping
-  - macOS (zsh): Test locally
-  - Linux (bash): Use Docker `docker run --rm -v $(pwd):/rtk -w /rtk rust:latest cargo test`
-  - Windows (PowerShell): Trust CI/CD pipeline or test manually if available
+- **For cross-platform**: We run Linux only in this environment — test here, trust CI for other platforms
 
 **Anti-pattern**: Running only automated tests (`cargo test`, `cargo clippy`) without actually executing `rtk <cmd>` and inspecting output.
 
@@ -539,11 +470,11 @@ hyperfine 'target/release/rtk git log -10' --warmup 3
 **ALWAYS confirm working directory before starting any work**:
 
 ```bash
-pwd  # Verify you're in /Users/florianbruniaux/Sites/rtk-ai/rtk
+pwd  # Verify you're in /home/ubuntu/workspace/.vibe-kanban-workspaces/14a2-rtk-upgrade/ks-rtk
 git branch  # Verify correct branch (main, feature/*, etc.)
 ```
 
-**Never assume** which project to work in. RTK shares parent directory with other projects (ccboard, cc-economics).
+**Never assume** which project to work in. ks-rtk shares parent directory with other workspace projects.
 
 **Context**: Wrong directory detection was a common friction point in multi-repo environments. Always verify before file operations.
 
