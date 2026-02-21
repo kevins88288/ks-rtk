@@ -28,14 +28,45 @@ If `rtk gain` fails, you have the wrong package installed.
 > All commands work with passthrough support even for subcommands rtk doesn't specifically handle.
 
 ### Build & Run
+
+#### Container Build Setup
+
+This project runs in a container environment. Before any `cargo` commands:
+
+```bash
+source /home/ubuntu/.cargo/env
+```
+
+**Fake pkg-config setup** (required if `/tmp` was cleared — rusqlite needs a libsqlite3 symlink):
+
+```bash
+mkdir -p /tmp/fake-pkgconfig /tmp/fakelibs
+ln -sf /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 /tmp/fakelibs/libsqlite3.so
+cat > /tmp/fake-pkgconfig/sqlite3.pc << 'EOF'
+prefix=/usr
+libdir=/tmp/fakelibs
+includedir=${prefix}/include
+Name: SQLite
+Version: 3.0.0
+Libs: -L${libdir} -lsqlite3
+Cflags:
+EOF
+```
+
+**LTO disabled**: `.cargo/config.toml` sets `rustflags = ["-C", "lto=off"]` because the container lacks `liblto_plugin.so`. The build still uses `opt-level=3` and `strip`.
+
+**Deploy**: Container mounts are read-only. After building, deploy from the host:
+```bash
+sudo cp target/release/rtk /usr/local/bin/rtk
+```
+
 ```bash
 # Development build
 cargo build                   # raw
 rtk cargo build               # preferred (token-optimized)
 
-# Release build (optimized)
-cargo build --release
-rtk cargo build --release
+# Release build (optimized) - Container-specific command required:
+LIBSQLITE3_SYS_USE_PKG_CONFIG=1 PKG_CONFIG_PATH=/tmp/fake-pkgconfig LIBRARY_PATH=/tmp/fakelibs cargo build --release
 
 # Run directly
 cargo run -- <command>
