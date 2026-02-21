@@ -109,12 +109,18 @@ pub fn run(args: &[String], verbose: u8) -> Result<()> {
     } else {
         paths.join(" ")
     };
-    print!("{}", filtered);
-    timer.track(
+    if let Some(hint) = crate::tee::tee_and_hint(&raw, "ls", 0) {
+        print!("{}", filtered);
+        println!("{}", hint);
+    } else {
+        print!("{}", filtered);
+    }
+    timer.track_tagged(
         &format!("ls -la {}", target_display),
         "rtk ls",
         &raw,
         &filtered,
+        "ks:tee",
     );
 
     Ok(())

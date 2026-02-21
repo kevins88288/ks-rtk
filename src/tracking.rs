@@ -252,6 +252,12 @@ impl Tracker {
             [],
         );
 
+        // Migration: add fork_tag column for fork feature attribution (ks-rtk)
+        let _ = conn.execute(
+            "ALTER TABLE commands ADD COLUMN fork_tag TEXT DEFAULT NULL",
+            [],
+        );
+
         Ok(Self { conn })
     }
 
@@ -284,6 +290,7 @@ impl Tracker {
         input_tokens: usize,
         output_tokens: usize,
         exec_time_ms: u64,
+        fork_tag: Option<&str>,
     ) -> Result<()> {
         let saved = input_tokens.saturating_sub(output_tokens);
         let pct = if input_tokens > 0 {
@@ -293,8 +300,8 @@ impl Tracker {
         };
 
         self.conn.execute(
-            "INSERT INTO commands (timestamp, original_cmd, rtk_cmd, input_tokens, output_tokens, saved_tokens, savings_pct, exec_time_ms)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            "INSERT INTO commands (timestamp, original_cmd, rtk_cmd, input_tokens, output_tokens, saved_tokens, savings_pct, exec_time_ms, fork_tag)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             params![
                 Utc::now().to_rfc3339(),
                 original_cmd,
@@ -303,12 +310,34 @@ impl Tracker {
                 output_tokens as i64,
                 saved as i64,
                 pct,
-                exec_time_ms as i64
+                exec_time_ms as i64,
+                fork_tag
             ],
         )?;
 
         self.cleanup_old()?;
         Ok(())
+    }
+
+    /// Query fork feature statistics grouped by fork_tag.
+    ///
+    /// Returns rows of (tag, count, total_saved, avg_savings_pct) for all
+    /// records that have a non-null fork_tag, ordered by tokens saved descending.
+    pub fn get_fork_stats(&self) -> Result<Vec<(String, i64, i64, f64)>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT fork_tag, COUNT(*), SUM(saved_tokens), ROUND(AVG(savings_pct), 1)
+             FROM commands WHERE fork_tag IS NOT NULL GROUP BY fork_tag ORDER BY SUM(saved_tokens) DESC",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, i64>(1)?,
+                row.get::<_, i64>(2)?,
+                row.get::<_, f64>(3)?,
+            ))
+        })?;
+        rows.collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
     fn cleanup_old(&self) -> Result<()> {
@@ -798,6 +827,31 @@ impl TimedExecution {
                 input_tokens,
                 output_tokens,
                 elapsed_ms,
+                None,
+            );
+        }
+    }
+
+    /// Like `track` but records a fork feature tag for attribution in `rtk gain`.
+    pub fn track_tagged(
+        &self,
+        original_cmd: &str,
+        rtk_cmd: &str,
+        input: &str,
+        output: &str,
+        fork_tag: &str,
+    ) {
+        if let Ok(tracker) = Tracker::new() {
+            let in_tokens = estimate_tokens(input);
+            let out_tokens = estimate_tokens(output);
+            let elapsed = self.start.elapsed().as_millis() as u64;
+            let _ = tracker.record(
+                original_cmd,
+                rtk_cmd,
+                in_tokens,
+                out_tokens,
+                elapsed,
+                Some(fork_tag),
             );
         }
     }
@@ -826,7 +880,7 @@ impl TimedExecution {
         let elapsed_ms = self.start.elapsed().as_millis() as u64;
         // input_tokens=0, output_tokens=0 won't dilute savings statistics
         if let Ok(tracker) = Tracker::new() {
-            let _ = tracker.record(original_cmd, rtk_cmd, 0, 0, elapsed_ms);
+            let _ = tracker.record(original_cmd, rtk_cmd, 0, 0, elapsed_ms, None);
         }
     }
 }
@@ -883,7 +937,7 @@ pub fn track(original_cmd: &str, rtk_cmd: &str, input: &str, output: &str) {
     let output_tokens = estimate_tokens(output);
 
     if let Ok(tracker) = Tracker::new() {
-        let _ = tracker.record(original_cmd, rtk_cmd, input_tokens, output_tokens, 0);
+        let _ = tracker.record(original_cmd, rtk_cmd, input_tokens, output_tokens, 0, None);
     }
 }
 
@@ -921,7 +975,7 @@ mod tests {
         let test_cmd = format!("rtk git status test_{}", std::process::id());
 
         tracker
-            .record("git status", &test_cmd, 100, 20, 50)
+            .record("git status", &test_cmd, 100, 20, 50, None)
             .expect("Failed to record");
 
         let recent = tracker.get_recent(10).expect("Failed to get recent");
@@ -948,12 +1002,12 @@ mod tests {
 
         // Record one real command with 80% savings
         tracker
-            .record("cmd1", &cmd1, 1000, 200, 10)
+            .record("cmd1", &cmd1, 1000, 200, 10, None)
             .expect("Failed to record cmd1");
 
         // Record passthrough (0, 0)
         tracker
-            .record("cmd2", &cmd2, 0, 0, 5)
+            .record("cmd2", &cmd2, 0, 0, 5, None)
             .expect("Failed to record passthrough");
 
         // Verify both records exist in recent history

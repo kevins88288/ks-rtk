@@ -218,6 +218,19 @@ pub fn run(
             println!("      Actual limits use rolling 5-hour windows, not monthly caps.");
         }
 
+        // Show fork feature stats if any exist
+        if let Ok(fork_stats) = tracker.get_fork_stats() {
+            if !fork_stats.is_empty() {
+                println!("\n{}Fork Features (ks-rtk):{}", "\x1b[1m", "\x1b[0m");
+                for (tag, count, saved, avg_pct) in &fork_stats {
+                    println!(
+                        "  {:<20} {:>5} cmds  {:>10} tokens saved  avg {:.1}%",
+                        tag, count, saved, avg_pct
+                    );
+                }
+            }
+        }
+
         return Ok(());
     }
 

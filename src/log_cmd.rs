@@ -134,8 +134,8 @@ fn analyze_logs(content: &str) -> String {
                 .map(|s| s.as_str())
                 .unwrap_or(normalized);
 
-            let truncated = if original.len() > 100 {
-                let t: String = original.chars().take(97).collect();
+            let truncated = if original.len() > 200 {
+                let t: String = original.chars().take(197).collect();
                 format!("{}...", t)
             } else {
                 original.to_string()
@@ -174,8 +174,8 @@ fn analyze_logs(content: &str) -> String {
                 .map(|s| s.as_str())
                 .unwrap_or(normalized);
 
-            let truncated = if original.len() > 100 {
-                let t: String = original.chars().take(97).collect();
+            let truncated = if original.len() > 200 {
+                let t: String = original.chars().take(197).collect();
                 format!("{}...", t)
             } else {
                 original.to_string()

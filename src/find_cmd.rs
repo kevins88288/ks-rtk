@@ -96,16 +96,14 @@ pub fn run(
     let raw_output = files.join("\n");
 
     if files.is_empty() {
-        let msg = format!(
-            "No files found matching '{}' in {}",
-            effective_pattern, path
-        );
+        let msg = format!("0 for '{}'", effective_pattern);
         println!("{}", msg);
-        timer.track(
+        timer.track_tagged(
             &format!("find {} -name '{}'", path, effective_pattern),
             "rtk find",
             &raw_output,
             &msg,
+            "ks:llm-friendly",
         );
         return Ok(());
     }
@@ -132,7 +130,7 @@ pub fn run(
     let dirs_count = dirs.len();
     let total_files = files.len();
 
-    println!("{} files, {} dirs:", total_files, dirs_count);
+    println!("📁 {}F {}D:", total_files, dirs_count);
     println!();
 
     // Display with proper --max limiting (count individual files)
@@ -195,11 +193,12 @@ pub fn run(
     }
 
     let rtk_output = format!("{}F {}D + {}", total_files, dirs_count, ext_line);
-    timer.track(
+    timer.track_tagged(
         &format!("find {} -name '{}'", path, effective_pattern),
         "rtk find",
         &raw_output,
         &rtk_output,
+        "ks:llm-friendly",
     );
 
     Ok(())
