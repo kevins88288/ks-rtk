@@ -98,6 +98,10 @@ elif echo "$MATCH_CMD" | grep -qE '^head[[:space:]]+'; then
     REWRITTEN="${ENV_PREFIX}rtk read $FILE --max-lines $LINES"
   fi
 
+# --- Word count ---
+elif echo "$MATCH_CMD" | grep -qE '^wc([[:space:]]|$)'; then
+  REWRITTEN="${ENV_PREFIX}$(echo "$CMD_BODY" | sed 's/^wc/rtk wc/')"
+
 # --- JS/TS tooling (added: npm run, npm test, vue-tsc) ---
 elif echo "$MATCH_CMD" | grep -qE '^(pnpm[[:space:]]+)?(npx[[:space:]]+)?vitest([[:space:]]|$)'; then
   REWRITTEN="${ENV_PREFIX}$(echo "$CMD_BODY" | sed -E 's/^(pnpm )?(npx )?vitest( run)?/rtk vitest run/')"

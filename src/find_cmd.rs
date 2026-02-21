@@ -96,7 +96,10 @@ pub fn run(
     let raw_output = files.join("\n");
 
     if files.is_empty() {
-        let msg = format!("0 for '{}'", effective_pattern);
+        let msg = format!(
+            "No files found matching '{}' in {}",
+            effective_pattern, path
+        );
         println!("{}", msg);
         timer.track(
             &format!("find {} -name '{}'", path, effective_pattern),
@@ -129,7 +132,7 @@ pub fn run(
     let dirs_count = dirs.len();
     let total_files = files.len();
 
-    println!("📁 {}F {}D:", total_files, dirs_count);
+    println!("{} files, {} dirs:", total_files, dirs_count);
     println!();
 
     // Display with proper --max limiting (count individual files)

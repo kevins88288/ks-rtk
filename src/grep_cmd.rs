@@ -56,7 +56,7 @@ pub fn run(
                 eprintln!("{}", stderr.trim());
             }
         }
-        let msg = format!("🔍 0 for '{}'", pattern);
+        let msg = format!("No matches found for '{}' in {}", pattern, path);
         println!("{}", msg);
         timer.track(
             &format!("grep -rn '{}' {}", pattern, path),
@@ -92,7 +92,11 @@ pub fn run(
     }
 
     let mut rtk_output = String::new();
-    rtk_output.push_str(&format!("🔍 {} in {}F:\n\n", total, by_file.len()));
+    rtk_output.push_str(&format!(
+        "{} matches in {} files:\n\n",
+        total,
+        by_file.len()
+    ));
 
     let mut shown = 0;
     let mut files: Vec<_> = by_file.iter().collect();
