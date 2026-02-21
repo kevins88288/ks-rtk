@@ -14,6 +14,25 @@ We track upstream closely and layer our own improvements on feature branches.
 | **Last synced** | 2026-02-20 |
 | **Synced version** | 0.22.2 |
 
+## Sync Risks
+
+### Upstream CLAUDE.md Contains Author Personal Preferences
+
+**Risk**: When syncing upstream, the author's `CLAUDE.md` is pulled in verbatim. It contains
+personal workflow preferences including language settings (e.g., "Respond in French"). These
+override your own Claude behavior until caught.
+
+**What happened**: Syncing to v0.22.2 pulled in a French language preference that caused Claude
+to respond in French for multiple sessions.
+
+**After every upstream sync, always review and override:**
+- `Language & Communication` section — confirm English is set
+- Any personal style, tone, or communication preferences the upstream author added
+- Dev workflow assumptions that differ from this environment (paths, tools, OS)
+
+**Fix applied**: Commit `fd66cc9` — Language section in `CLAUDE.md` now says "English always"
+with English communication examples replacing the original French ones.
+
 ## Our Customizations
 
 ### Phase 1: Foundation (merged to master)
@@ -65,3 +84,4 @@ rtk --version
 | 2026-02-20 | Initial fork setup. Synced from 0.18.0 to 0.22.2. Dropped obsolete grep bash flag stripping (upstream fixed in Rust). |
 | 2026-02-20 | Phase 1: LLM-friendly output messages merged to master. |
 | 2026-02-21 | Phase 2: fork_tag tracking, tee integration, log truncation fix, fork-stats script. |
+| 2026-02-21 | Docs: Added Sync Risks section documenting CLAUDE.md personal preference inheritance risk. |
