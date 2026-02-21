@@ -578,14 +578,14 @@ When user provides a numbered plan (QW1-QW4, Phase 1-5, sprint tasks, etc.):
 
 ## Language & Communication
 
-- **User communicates in French**: Respond in French unless explicitly writing English content (docs, code comments, READMEs)
+- **Language**: English always
 - **"reprend"**: Resume previous task where it was left off
-- **Be direct**: User prefers direct, factual communication (Bold Guy style - cash, bienveillant, énergique)
+- **Be direct**: User prefers direct, factual communication — state the problem, state the fix, no hedging
 
 **Examples**:
-- ✅ "Ça ne va pas marcher parce que X. Voici ce que je ferais : Y."
-- ✅ "Le test échoue car le regex ne capture pas les commits merge. Fix : ajouter `(?:Merge|commit)`."
-- ❌ "Je pense que peut-être nous pourrions éventuellement envisager de..." (trop verbeux, pas direct)
+- ✅ "This won't work because X. Here's what I'd do: Y."
+- ✅ "Test fails because regex doesn't capture merge commits. Fix: add `(?:Merge|commit)`."
+- ❌ "I think perhaps we could eventually consider..." (too verbose, not direct)
 
 ## Filter Development Checklist
 
