@@ -858,7 +858,14 @@ fn main() -> Result<()> {
                 git::run(git::GitCommand::Add, &args, None, cli.verbose)?;
             }
             GitCommands::Commit { message } => {
-                git::run(git::GitCommand::Commit { message }, &[], None, cli.verbose)?;
+                git::run(
+                    git::GitCommand::Commit {
+                        messages: vec![message],
+                    },
+                    &[],
+                    None,
+                    cli.verbose,
+                )?;
             }
             GitCommands::Push { args } => {
                 git::run(git::GitCommand::Push, &args, None, cli.verbose)?;
