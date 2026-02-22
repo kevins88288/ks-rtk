@@ -101,13 +101,37 @@ test_rewrite "cat package.json" \
   "cat package.json" \
   "rtk read package.json"
 
-test_rewrite "grep -rn pattern src/" \
+test_rewrite "grep -rn pattern src/ (flags stripped)" \
   "grep -rn pattern src/" \
-  "rtk grep -rn pattern src/"
+  "rtk grep pattern src/"
 
 test_rewrite "rg pattern src/" \
   "rg pattern src/" \
   "rtk grep pattern src/"
+
+test_rewrite "grep -rnl pattern src/ (all stripped)" \
+  "grep -rnl pattern src/" \
+  "rtk grep pattern src/"
+
+test_rewrite "grep -rni pattern src/ (-i preserved)" \
+  "grep -rni pattern src/" \
+  "rtk grep -i pattern src/"
+
+test_rewrite "rg -n --no-heading pattern ." \
+  "rg -n --no-heading pattern ." \
+  "rtk grep pattern ."
+
+test_rewrite "grep simple file.txt (no flags = no stripping)" \
+  "grep simple file.txt" \
+  "rtk grep simple file.txt"
+
+test_rewrite "rg --color=always pattern src/ (color stripped)" \
+  "rg --color=always pattern src/" \
+  "rtk grep pattern src/"
+
+test_rewrite "grep -rn --heading pattern . (long flags stripped)" \
+  "grep -rn --heading pattern ." \
+  "rtk grep pattern ."
 
 test_rewrite "cargo test" \
   "cargo test" \
@@ -193,17 +217,17 @@ test_rewrite "docker exec -it db psql" \
   "docker exec -it db psql" \
   "rtk docker exec -it db psql"
 
-test_rewrite "find (NOT rewritten — different arg format)" \
+test_rewrite "find rewritten" \
   "find . -name '*.ts'" \
-  ""
+  "rtk find . -name '*.ts'"
 
-test_rewrite "tree (NOT rewritten — different arg format)" \
+test_rewrite "tree rewritten" \
   "tree src/" \
-  ""
+  "rtk tree src/"
 
-test_rewrite "wget (NOT rewritten — different arg format)" \
+test_rewrite "wget rewritten" \
   "wget https://example.com/file" \
-  ""
+  "rtk wget https://example.com/file"
 
 test_rewrite "gh api repos/owner/repo" \
   "gh api repos/owner/repo" \

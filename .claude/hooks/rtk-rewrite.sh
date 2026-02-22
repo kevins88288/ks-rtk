@@ -106,7 +106,23 @@ elif echo "$MATCH_CMD" | grep -qE '^cargo[[:space:]]+fmt([[:space:]]|$)'; then
 elif echo "$MATCH_CMD" | grep -qE '^cat[[:space:]]+'; then
   REWRITTEN="${ENV_PREFIX}$(echo "$CMD_BODY" | sed 's/^cat /rtk read /')"
 elif echo "$MATCH_CMD" | grep -qE '^(rg|grep)[[:space:]]+'; then
-  REWRITTEN="${ENV_PREFIX}$(echo "$CMD_BODY" | sed -E 's/^(rg|grep) /rtk grep /')"
+  # Strip flags that conflict with rtk grep's Clap definitions or are redundant.
+  # rtk grep is always recursive, always shows line numbers and filenames.
+  # Stripped short flags: r,R,n,l,H,h  Stripped long flags: --recursive, etc.
+  # Preserved: -i, -w, -A, -B, -C, -F, -v, --glob (passed to rg via extra_args)
+  GREP_BODY=$(echo "$CMD_BODY" | sed -E 's/^(rg|grep) //')
+  # 1. Remove long flags we don't want
+  GREP_BODY=$(echo "$GREP_BODY" | sed -E \
+    -e 's/(^| )(--recursive|--line-number|--files-with-matches|--no-filename|--with-filename|--no-heading|--heading|--color[^ ]*)( |$)/ /g' \
+    -e 's/  +/ /g' -e 's/^ +//;s/ +$//')
+  # 2. Clean combined short flags: remove r,R,n,l,H,h chars; keep the rest
+  GREP_BODY=$(echo "$GREP_BODY" | sed -E \
+    -e 's/(^| )-([rRnlHh]+)( |$)/ /g' \
+    -e 's/(^| )-([a-zA-Z]*)[rRnlHh]([a-zA-Z]*)/\1-\2\3/g' \
+    -e 's/(^| )-([a-zA-Z]*)[rRnlHh]([a-zA-Z]*)/\1-\2\3/g' \
+    -e 's/(^| )-( |$)/ /g' \
+    -e 's/  +/ /g' -e 's/^ +//;s/ +$//')
+  REWRITTEN="${ENV_PREFIX}rtk grep ${GREP_BODY}"
 elif echo "$MATCH_CMD" | grep -qE '^ls([[:space:]]|$)'; then
   REWRITTEN="${ENV_PREFIX}$(echo "$CMD_BODY" | sed 's/^ls/rtk ls/')"
 elif echo "$MATCH_CMD" | grep -qE '^tree([[:space:]]|$)'; then
