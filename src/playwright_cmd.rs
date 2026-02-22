@@ -228,6 +228,32 @@ fn extract_failures_regex(output: &str) -> Vec<TestFailure> {
     failures
 }
 
+fn strip_reporter_args(args: &[String]) -> Vec<String> {
+    let mut filtered = Vec::with_capacity(args.len());
+    let mut i = 0;
+
+    while i < args.len() {
+        let arg = &args[i];
+        if arg == "--reporter" || arg == "-r" {
+            i += 1;
+            if i < args.len() {
+                i += 1;
+            }
+            continue;
+        }
+
+        if arg.starts_with("--reporter=") || arg.starts_with("-r=") {
+            i += 1;
+            continue;
+        }
+
+        filtered.push(arg.clone());
+        i += 1;
+    }
+
+    filtered
+}
+
 pub fn run(args: &[String], verbose: u8) -> Result<()> {
     let timer = tracking::TimedExecution::start();
 
@@ -258,10 +284,9 @@ pub fn run(args: &[String], verbose: u8) -> Result<()> {
         cmd.arg("test");
         cmd.arg("--reporter=json");
         // Strip user's --reporter to avoid conflicts with our forced JSON
-        for arg in &args[1..] {
-            if !arg.starts_with("--reporter") {
-                cmd.arg(arg);
-            }
+        let filtered_args = strip_reporter_args(&args[1..]);
+        for arg in filtered_args {
+            cmd.arg(arg);
         }
     } else {
         for arg in args {
@@ -463,5 +488,35 @@ mod tests {
         let result = PlaywrightParser::parse(invalid);
         assert_eq!(result.tier(), 3); // Passthrough
         assert!(!result.is_ok());
+    }
+
+    #[test]
+    fn test_strip_reporter_args_long_split() {
+        let args = vec![
+            "--reporter".to_string(),
+            "line".to_string(),
+            "tests/a.spec.ts".to_string(),
+        ];
+        assert_eq!(strip_reporter_args(&args), vec!["tests/a.spec.ts"]);
+    }
+
+    #[test]
+    fn test_strip_reporter_args_long_equals() {
+        let args = vec![
+            "--reporter=line".to_string(),
+            "tests/a.spec.ts".to_string(),
+        ];
+        assert_eq!(strip_reporter_args(&args), vec!["tests/a.spec.ts"]);
+    }
+
+    #[test]
+    fn test_strip_reporter_args_short_forms() {
+        let args = vec![
+            "-r".to_string(),
+            "dot".to_string(),
+            "-r=json".to_string(),
+            "--workers=2".to_string(),
+        ];
+        assert_eq!(strip_reporter_args(&args), vec!["--workers=2"]);
     }
 }

@@ -18,6 +18,7 @@ mod git;
 mod go_cmd;
 mod golangci_cmd;
 mod grep_cmd;
+mod hook_audit_cmd;
 mod init;
 mod json_cmd;
 mod learn;
@@ -45,6 +46,7 @@ mod tsc_cmd;
 mod utils;
 mod vitest_cmd;
 mod wget_cmd;
+mod wc_cmd;
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
@@ -280,6 +282,20 @@ enum Commands {
         /// Remove all RTK artifacts (hook, RTK.md, CLAUDE.md reference, settings.json entry)
         #[arg(long)]
         uninstall: bool,
+    },
+
+    /// Audit command rewrite behavior from hook logs
+    HookAudit {
+        /// Include only entries from the last N days (0 = all time)
+        #[arg(short, long, default_value = "30")]
+        since: u64,
+    },
+
+    /// Compact filter for `wc` output
+    Wc {
+        /// Arguments passed to wc (supports native wc flags like -l, -w, -c)
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
     },
 
     /// Download with compact output (strips progress bars)
@@ -1073,6 +1089,14 @@ fn main() -> Result<()> {
                 };
                 init::run(global, claude_md, hook_only, patch_mode, cli.verbose)?;
             }
+        }
+
+        Commands::HookAudit { since } => {
+            hook_audit_cmd::run(since, cli.verbose)?;
+        }
+
+        Commands::Wc { args } => {
+            wc_cmd::run(&args, cli.verbose)?;
         }
 
         Commands::Wget { url, stdout, args } => {

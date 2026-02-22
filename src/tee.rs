@@ -70,6 +70,18 @@ fn cleanup_old_files(dir: &std::path::Path, max_files: usize) {
     }
 }
 
+fn truncate_utf8(raw: &str, max_bytes: usize) -> &str {
+    if raw.len() <= max_bytes {
+        return raw;
+    }
+
+    let mut end = max_bytes;
+    while end > 0 && !raw.is_char_boundary(end) {
+        end -= 1;
+    }
+    &raw[..end]
+}
+
 /// Check if tee should be skipped based on config, mode, exit code, and size.
 /// Returns None if should skip, Some(tee_dir) if should proceed.
 fn should_tee(
@@ -120,9 +132,10 @@ fn write_tee_file(
 
     // Truncate at max_file_size
     let content = if raw.len() > max_file_size {
+        let truncated = truncate_utf8(raw, max_file_size);
         format!(
             "{}\n\n--- truncated at {} bytes ---",
-            &raw[..max_file_size],
+            truncated,
             max_file_size
         )
     } else {
@@ -318,6 +331,19 @@ mod tests {
         let content = fs::read_to_string(&path).unwrap();
         assert!(content.contains("--- truncated at 1000 bytes ---"));
         assert!(content.len() < 2000);
+    }
+
+    #[test]
+    fn test_write_tee_file_truncation_utf8_boundary() {
+        let tmpdir = tempfile::tempdir().unwrap();
+        let big_output = "é".repeat(800); // 1600 bytes
+        // 1001 splits a UTF-8 code point if slicing by byte index directly.
+        let result = write_tee_file(&big_output, "test", tmpdir.path(), 1001, 20);
+        assert!(result.is_some());
+
+        let path = result.unwrap();
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("--- truncated at 1001 bytes ---"));
     }
 
     #[test]
