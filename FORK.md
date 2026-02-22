@@ -55,6 +55,7 @@ with English communication examples replacing the original French ones.
 | `ks:llm-friendly` | grep_cmd.rs, find_cmd.rs | Natural language messages prevent LLM circumvention |
 | `ks:tee` | ls.rs, container.rs, grep_cmd.rs | Tee recovery hints for filtered output |
 | `ks:truncation-fix` | log_cmd.rs | Less aggressive error truncation |
+| `ks:grep-flag-strip` | hooks/rtk-rewrite.sh | Strips -r/-n/-l/-H/-h before rewriting to rtk grep (upstream Clap rejects them when passed before positional args) |
 
 ### How to Check Fork Savings
 
@@ -85,3 +86,4 @@ rtk --version
 | 2026-02-20 | Phase 1: LLM-friendly output messages merged to master. |
 | 2026-02-21 | Phase 2: fork_tag tracking, tee integration, log truncation fix, fork-stats script. |
 | 2026-02-21 | Docs: Added Sync Risks section documenting CLAUDE.md personal preference inheritance risk. |
+| 2026-02-22 | Merged grep flag stripping hook fix (b9094b2 → 765611e). Upstream did not fix: trailing_var_arg only captures flags after positional args, so -rn before pattern still errors. |
