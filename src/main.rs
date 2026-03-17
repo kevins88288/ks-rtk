@@ -1,3 +1,5 @@
+mod aws_cmd;
+mod binlog;
 mod cargo_cmd;
 mod cc_economics;
 mod ccusage;
@@ -8,6 +10,9 @@ mod deps;
 mod diff_cmd;
 mod discover;
 mod display_helpers;
+mod dotnet_cmd;
+mod dotnet_format_report;
+mod dotnet_trx;
 mod env_cmd;
 mod filter;
 mod find_cmd;
@@ -18,14 +23,18 @@ mod git;
 mod go_cmd;
 mod golangci_cmd;
 mod grep_cmd;
+mod gt_cmd;
 mod hook_audit_cmd;
+mod hook_check;
 mod init;
+mod integrity;
 mod json_cmd;
 mod learn;
 mod lint_cmd;
 mod local_llm;
 mod log_cmd;
 mod ls;
+mod mypy_cmd;
 mod next_cmd;
 mod npm_cmd;
 mod parser;
@@ -34,21 +43,29 @@ mod playwright_cmd;
 mod pnpm_cmd;
 mod prettier_cmd;
 mod prisma_cmd;
+mod psql_cmd;
 mod pytest_cmd;
 mod read;
+mod rewrite_cmd;
 mod ruff_cmd;
 mod runner;
+mod session_cmd;
 mod summary;
 mod tee;
+mod telemetry;
+mod toml_filter;
 mod tracking;
 mod tree;
+mod trust;
 mod tsc_cmd;
 mod utils;
+mod verify_cmd;
 mod vitest_cmd;
-mod wget_cmd;
 mod wc_cmd;
+mod wget_cmd;
 
 use anyhow::{Context, Result};
+use clap::error::ErrorKind;
 use clap::{Parser, Subcommand};
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
@@ -101,8 +118,11 @@ enum Commands {
         #[arg(short, long, default_value = "minimal")]
         level: filter::FilterLevel,
         /// Max lines
-        #[arg(short, long)]
+        #[arg(short, long, conflicts_with = "tail_lines")]
         max_lines: Option<usize>,
+        /// Keep only last N lines
+        #[arg(long, conflicts_with = "max_lines")]
+        tail_lines: Option<usize>,
         /// Show line numbers
         #[arg(short = 'n', long)]
         line_numbers: bool,
@@ -122,6 +142,38 @@ enum Commands {
 
     /// Git commands with compact output
     Git {
+        /// Change to directory before executing (like git -C <path>, can be repeated)
+        #[arg(short = 'C', action = clap::ArgAction::Append)]
+        directory: Vec<String>,
+
+        /// Git configuration override (like git -c key=value, can be repeated)
+        #[arg(short = 'c', action = clap::ArgAction::Append)]
+        config_override: Vec<String>,
+
+        /// Set the path to the .git directory
+        #[arg(long = "git-dir")]
+        git_dir: Option<String>,
+
+        /// Set the path to the working tree
+        #[arg(long = "work-tree")]
+        work_tree: Option<String>,
+
+        /// Disable pager (like git --no-pager)
+        #[arg(long = "no-pager")]
+        no_pager: bool,
+
+        /// Skip optional locks (like git --no-optional-locks)
+        #[arg(long = "no-optional-locks")]
+        no_optional_locks: bool,
+
+        /// Treat repository as bare (like git --bare)
+        #[arg(long)]
+        bare: bool,
+
+        /// Treat pathspecs literally (like git --literal-pathspecs)
+        #[arg(long = "literal-pathspecs")]
+        literal_pathspecs: bool,
+
         #[command(subcommand)]
         command: GitCommands,
     },
@@ -131,6 +183,22 @@ enum Commands {
         /// Subcommand: pr, issue, run, repo
         subcommand: String,
         /// Additional arguments
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+
+    /// AWS CLI with compact output (force JSON, compress)
+    Aws {
+        /// AWS service subcommand (e.g., sts, s3, ec2, ecs, rds, cloudformation)
+        subcommand: String,
+        /// Additional arguments
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+
+    /// PostgreSQL client with compact output (strip borders, compress tables)
+    Psql {
+        /// psql arguments
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
@@ -181,19 +249,11 @@ enum Commands {
         show_all: bool,
     },
 
-    /// Find files with compact tree output
+    /// Find files with compact tree output (accepts native find flags like -name, -type)
     Find {
-        /// Pattern to search (glob)
-        pattern: String,
-        /// Path to search in
-        #[arg(default_value = ".")]
-        path: String,
-        /// Maximum results to show
-        #[arg(short, long, default_value = "50")]
-        max: usize,
-        /// Filter by type: f (file), d (directory)
-        #[arg(short = 't', long, default_value = "f")]
-        file_type: String,
+        /// All find arguments (supports both RTK and native find syntax)
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
     },
 
     /// Ultra-condensed diff (only changed lines)
@@ -208,6 +268,12 @@ enum Commands {
     Log {
         /// Log file (omit for stdin)
         file: Option<PathBuf>,
+    },
+
+    /// .NET commands with compact output (build/test/restore/format)
+    Dotnet {
+        #[command(subcommand)]
+        command: DotnetCommands,
     },
 
     /// Docker commands with compact output
@@ -248,6 +314,9 @@ enum Commands {
         /// Filter by file type (e.g., ts, py, rust)
         #[arg(short = 't', long)]
         file_type: Option<String>,
+        /// Show line numbers (always on, accepted for grep/rg compatibility)
+        #[arg(short = 'n', long)]
+        line_numbers: bool,
         /// Extra ripgrep arguments (e.g., -i, -A 3, -w, --glob)
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         extra_args: Vec<String>,
@@ -258,6 +327,10 @@ enum Commands {
         /// Add to global ~/.claude/CLAUDE.md instead of local
         #[arg(short, long)]
         global: bool,
+
+        /// Install OpenCode plugin (in addition to Claude Code)
+        #[arg(long)]
+        opencode: bool,
 
         /// Show current configuration
         #[arg(long)]
@@ -284,20 +357,6 @@ enum Commands {
         uninstall: bool,
     },
 
-    /// Audit command rewrite behavior from hook logs
-    HookAudit {
-        /// Include only entries from the last N days (0 = all time)
-        #[arg(short, long, default_value = "30")]
-        since: u64,
-    },
-
-    /// Compact filter for `wc` output
-    Wc {
-        /// Arguments passed to wc (supports native wc flags like -l, -w, -c)
-        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
-        args: Vec<String>,
-    },
-
     /// Download with compact output (strips progress bars)
     Wget {
         /// URL to download
@@ -310,8 +369,18 @@ enum Commands {
         args: Vec<String>,
     },
 
+    /// Word/line/byte count with compact output (strips paths and padding)
+    Wc {
+        /// Arguments passed to wc (files, flags like -l, -w, -c)
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+
     /// Show token savings summary and history
     Gain {
+        /// Filter statistics to current project (current working directory) // added
+        #[arg(short, long)]
+        project: bool,
         /// Show ASCII graph of daily savings
         #[arg(short, long)]
         graph: bool,
@@ -339,6 +408,9 @@ enum Commands {
         /// Output format: text, json, csv
         #[arg(short, long, default_value = "text")]
         format: String,
+        /// Show parse failure log (commands that fell back to raw execution)
+        #[arg(short = 'F', long)]
+        failures: bool,
     },
 
     /// Claude Code economics: spending (ccusage) vs savings (rtk) analysis
@@ -467,6 +539,9 @@ enum Commands {
         format: String,
     },
 
+    /// Show RTK adoption across Claude Code sessions
+    Session {},
+
     /// Learn CLI corrections from Claude Code error history
     Learn {
         /// Filter by project path (substring match)
@@ -499,6 +574,26 @@ enum Commands {
         args: Vec<OsString>,
     },
 
+    /// Trust project-local TOML filters in current directory
+    Trust {
+        /// List all trusted projects
+        #[arg(long)]
+        list: bool,
+    },
+
+    /// Revoke trust for project-local TOML filters
+    Untrust,
+
+    /// Verify hook integrity and run TOML filter inline tests
+    Verify {
+        /// Run tests only for this filter name
+        #[arg(long)]
+        filter: Option<String>,
+        /// Fail if any filter has no inline tests (CI mode)
+        #[arg(long)]
+        require_all: bool,
+    },
+
     /// Ruff linter/formatter with compact output
     Ruff {
         /// Ruff arguments (e.g., check, format --check)
@@ -509,6 +604,13 @@ enum Commands {
     /// Pytest test runner with compact output
     Pytest {
         /// Pytest arguments
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+
+    /// Mypy type checker with grouped error output
+    Mypy {
+        /// Mypy arguments
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
@@ -526,10 +628,38 @@ enum Commands {
         command: GoCommands,
     },
 
+    /// Graphite (gt) stacked PR commands with compact output
+    Gt {
+        #[command(subcommand)]
+        command: GtCommands,
+    },
+
     /// golangci-lint with compact output
     #[command(name = "golangci-lint")]
     GolangciLint {
         /// golangci-lint arguments
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+
+    /// Show hook rewrite audit metrics (requires RTK_HOOK_AUDIT=1)
+    #[command(name = "hook-audit")]
+    HookAudit {
+        /// Show entries from last N days (0 = all time)
+        #[arg(short, long, default_value = "7")]
+        since: u64,
+    },
+
+    /// Rewrite a raw command to its RTK equivalent (single source of truth for hooks)
+    ///
+    /// Exits 0 and prints the rewritten command if supported.
+    /// Exits 1 with no output if the command has no RTK equivalent.
+    ///
+    /// Used by Claude Code, Gemini CLI, and other LLM hooks:
+    ///   REWRITTEN=$(rtk rewrite "$CMD") || exit 0
+    Rewrite {
+        /// Raw command to rewrite (e.g. "git status", "cargo test && git push")
+        /// Accepts multiple args: `rtk rewrite ls -al` is equivalent to `rtk rewrite "ls -al"`
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
@@ -569,9 +699,9 @@ enum GitCommands {
     },
     /// Commit → "ok ✓ \<hash\>"
     Commit {
-        /// Commit message
-        #[arg(short, long)]
-        message: String,
+        /// Git commit arguments (supports -a, -m, --amend, --allow-empty, etc)
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
     },
     /// Push → "ok ✓ \<branch\>"
     Push {
@@ -641,7 +771,7 @@ enum PnpmCommands {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// Build (delegates to next build filter)
+    /// Build (generic passthrough, no framework-specific filter)
     Build {
         /// Additional build arguments
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
@@ -666,7 +796,31 @@ enum DockerCommands {
     Images,
     /// Show container logs (deduplicated)
     Logs { container: String },
+    /// Docker Compose commands with compact output
+    Compose {
+        #[command(subcommand)]
+        command: ComposeCommands,
+    },
     /// Passthrough: runs any unsupported docker subcommand directly
+    #[command(external_subcommand)]
+    Other(Vec<OsString>),
+}
+
+#[derive(Subcommand)]
+enum ComposeCommands {
+    /// List compose services (compact)
+    Ps,
+    /// Show compose logs (deduplicated)
+    Logs {
+        /// Optional service name
+        service: Option<String>,
+    },
+    /// Build compose services (summary)
+    Build {
+        /// Optional service name
+        service: Option<String>,
+    },
+    /// Passthrough: runs any unsupported compose subcommand directly
     #[command(external_subcommand)]
     Other(Vec<OsString>),
 }
@@ -800,6 +954,33 @@ enum CargoCommands {
 }
 
 #[derive(Subcommand)]
+enum DotnetCommands {
+    /// Build with compact output
+    Build {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// Test with compact output
+    Test {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// Restore with compact output
+    Restore {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// Format with compact output
+    Format {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// Passthrough: runs any unsupported dotnet subcommand directly
+    #[command(external_subcommand)]
+    Other(Vec<OsString>),
+}
+
+#[derive(Subcommand)]
 enum GoCommands {
     /// Run tests with compact output (90% token reduction via JSON streaming)
     Test {
@@ -824,8 +1005,228 @@ enum GoCommands {
     Other(Vec<OsString>),
 }
 
+/// RTK-only subcommands that should never fall back to raw execution.
+/// If Clap fails to parse these, show the Clap error directly.
+const RTK_META_COMMANDS: &[&str] = &[
+    "gain",
+    "discover",
+    "learn",
+    "init",
+    "config",
+    "proxy",
+    "hook-audit",
+    "cc-economics",
+    "verify",
+    "trust",
+    "untrust",
+    "session",
+    "rewrite",
+];
+
+fn run_fallback(parse_error: clap::Error) -> Result<()> {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+
+    // No args → show Clap's error (user ran just "rtk" with bad syntax)
+    if args.is_empty() {
+        parse_error.exit();
+    }
+
+    // RTK meta-commands should never fall back to raw execution.
+    // e.g. `rtk gain --badtypo` should show Clap's error, not try to run `gain` from $PATH.
+    if RTK_META_COMMANDS.contains(&args[0].as_str()) {
+        parse_error.exit();
+    }
+
+    let raw_command = args.join(" ");
+    let error_message = utils::strip_ansi(&parse_error.to_string());
+
+    // Start timer before execution to capture actual command runtime
+    let timer = tracking::TimedExecution::start();
+
+    // TOML filter lookup — bypass with RTK_NO_TOML=1
+    // Use basename of args[0] so absolute paths (/usr/bin/make) still match "^make\b".
+    let lookup_cmd = {
+        let base = std::path::Path::new(&args[0])
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_else(|| args[0].clone());
+        std::iter::once(base.as_str())
+            .chain(args[1..].iter().map(|s| s.as_str()))
+            .collect::<Vec<_>>()
+            .join(" ")
+    };
+    let toml_match = if std::env::var("RTK_NO_TOML").ok().as_deref() == Some("1") {
+        None
+    } else {
+        toml_filter::find_matching_filter(&lookup_cmd)
+    };
+
+    if let Some(filter) = toml_match {
+        // TOML match: capture stdout for filtering
+        let result = utils::resolved_command(&args[0])
+            .args(&args[1..])
+            .stdin(std::process::Stdio::inherit())
+            .stdout(std::process::Stdio::piped()) // capture
+            .stderr(std::process::Stdio::inherit()) // stderr always direct
+            .output();
+
+        match result {
+            Ok(output) => {
+                let stdout_raw = String::from_utf8_lossy(&output.stdout);
+
+                // Tee raw output BEFORE filtering on failure — lets LLM re-read if needed
+                let tee_hint = if !output.status.success() {
+                    tee::tee_and_hint(&stdout_raw, &raw_command, output.status.code().unwrap_or(1))
+                } else {
+                    None
+                };
+
+                let filtered = toml_filter::apply_filter(filter, &stdout_raw);
+                println!("{}", filtered);
+                if let Some(hint) = tee_hint {
+                    println!("{}", hint);
+                }
+
+                timer.track(
+                    &raw_command,
+                    &format!("rtk:toml {}", raw_command),
+                    &stdout_raw,
+                    &filtered,
+                );
+                tracking::record_parse_failure_silent(&raw_command, &error_message, true);
+
+                if !output.status.success() {
+                    std::process::exit(output.status.code().unwrap_or(1));
+                }
+            }
+            Err(e) => {
+                // Command not found — same behaviour as no-TOML path
+                tracking::record_parse_failure_silent(&raw_command, &error_message, false);
+                eprintln!("[rtk: {}]", e);
+                std::process::exit(127);
+            }
+        }
+    } else {
+        // No TOML match: original passthrough behaviour (Stdio::inherit, streaming)
+        let status = utils::resolved_command(&args[0])
+            .args(&args[1..])
+            .stdin(std::process::Stdio::inherit())
+            .stdout(std::process::Stdio::inherit())
+            .stderr(std::process::Stdio::inherit())
+            .status();
+
+        match status {
+            Ok(s) => {
+                timer.track_passthrough(&raw_command, &format!("rtk fallback: {}", raw_command));
+
+                tracking::record_parse_failure_silent(&raw_command, &error_message, true);
+
+                if !s.success() {
+                    std::process::exit(s.code().unwrap_or(1));
+                }
+            }
+            Err(e) => {
+                tracking::record_parse_failure_silent(&raw_command, &error_message, false);
+                // Command not found or other OS error — single message, no duplicate Clap error
+                eprintln!("[rtk: {}]", e);
+                std::process::exit(127);
+            }
+        }
+    }
+
+    Ok(())
+}
+
+#[derive(Subcommand)]
+enum GtCommands {
+    /// Compact stack log output
+    Log {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// Compact submit output
+    Submit {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// Compact sync output
+    Sync {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// Compact restack output
+    Restack {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// Compact create output
+    Create {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// Branch info and management
+    Branch {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// Passthrough: git-passthrough detection or direct gt execution
+    #[command(external_subcommand)]
+    Other(Vec<OsString>),
+}
+
+/// Split a string into shell-like tokens, respecting single and double quotes.
+/// e.g. `git log --format="%H %s"` → ["git", "log", "--format=%H %s"]
+fn shell_split(input: &str) -> Vec<String> {
+    let mut tokens = Vec::new();
+    let mut current = String::new();
+    let mut chars = input.chars().peekable();
+    let mut in_single = false;
+    let mut in_double = false;
+
+    while let Some(c) = chars.next() {
+        match c {
+            '\'' if !in_double => in_single = !in_single,
+            '"' if !in_single => in_double = !in_double,
+            ' ' | '\t' if !in_single && !in_double => {
+                if !current.is_empty() {
+                    tokens.push(std::mem::take(&mut current));
+                }
+            }
+            _ => current.push(c),
+        }
+    }
+    if !current.is_empty() {
+        tokens.push(current);
+    }
+    tokens
+}
+
 fn main() -> Result<()> {
-    let cli = Cli::parse();
+    // Fire-and-forget telemetry ping (1/day, non-blocking)
+    telemetry::maybe_ping();
+
+    let cli = match Cli::try_parse() {
+        Ok(cli) => cli,
+        Err(e) => {
+            if matches!(e.kind(), ErrorKind::DisplayHelp | ErrorKind::DisplayVersion) {
+                e.exit();
+            }
+            return run_fallback(e);
+        }
+    };
+
+    // Warn if installed hook is outdated/missing (1/day, non-blocking).
+    // Skip for Gain — it shows its own inline hook warning.
+    if !matches!(cli.command, Commands::Gain { .. }) {
+        hook_check::maybe_warn();
+    }
+
+    // Runtime integrity check for operational commands.
+    // Meta commands (init, gain, verify, config, etc.) skip the check
+    // because they don't go through the hook pipeline.
+    if is_operational_command(&cli.command) {
+        integrity::runtime_check()?;
+    }
 
     match cli.command {
         Commands::Ls { args } => {
@@ -840,12 +1241,20 @@ fn main() -> Result<()> {
             file,
             level,
             max_lines,
+            tail_lines,
             line_numbers,
         } => {
             if file == Path::new("-") {
-                read::run_stdin(level, max_lines, line_numbers, cli.verbose)?;
+                read::run_stdin(level, max_lines, tail_lines, line_numbers, cli.verbose)?;
             } else {
-                read::run(&file, level, max_lines, line_numbers, cli.verbose)?;
+                read::run(
+                    &file,
+                    level,
+                    max_lines,
+                    tail_lines,
+                    line_numbers,
+                    cli.verbose,
+                )?;
             }
         }
 
@@ -857,62 +1266,161 @@ fn main() -> Result<()> {
             local_llm::run(&file, &model, force_download, cli.verbose)?;
         }
 
-        Commands::Git { command } => match command {
-            GitCommands::Diff { args } => {
-                git::run(git::GitCommand::Diff, &args, None, cli.verbose)?;
+        Commands::Git {
+            directory,
+            config_override,
+            git_dir,
+            work_tree,
+            no_pager,
+            no_optional_locks,
+            bare,
+            literal_pathspecs,
+            command,
+        } => {
+            // Build global git args (inserted between "git" and subcommand)
+            let mut global_args: Vec<String> = Vec::new();
+            for dir in &directory {
+                global_args.push("-C".to_string());
+                global_args.push(dir.clone());
             }
-            GitCommands::Log { args } => {
-                git::run(git::GitCommand::Log, &args, None, cli.verbose)?;
+            for cfg in &config_override {
+                global_args.push("-c".to_string());
+                global_args.push(cfg.clone());
             }
-            GitCommands::Status { args } => {
-                git::run(git::GitCommand::Status, &args, None, cli.verbose)?;
+            if let Some(ref dir) = git_dir {
+                global_args.push("--git-dir".to_string());
+                global_args.push(dir.clone());
             }
-            GitCommands::Show { args } => {
-                git::run(git::GitCommand::Show, &args, None, cli.verbose)?;
+            if let Some(ref tree) = work_tree {
+                global_args.push("--work-tree".to_string());
+                global_args.push(tree.clone());
             }
-            GitCommands::Add { args } => {
-                git::run(git::GitCommand::Add, &args, None, cli.verbose)?;
+            if no_pager {
+                global_args.push("--no-pager".to_string());
             }
-            GitCommands::Commit { message } => {
-                git::run(
-                    git::GitCommand::Commit {
-                        messages: vec![message],
-                    },
-                    &[],
-                    None,
-                    cli.verbose,
-                )?;
+            if no_optional_locks {
+                global_args.push("--no-optional-locks".to_string());
             }
-            GitCommands::Push { args } => {
-                git::run(git::GitCommand::Push, &args, None, cli.verbose)?;
+            if bare {
+                global_args.push("--bare".to_string());
             }
-            GitCommands::Pull { args } => {
-                git::run(git::GitCommand::Pull, &args, None, cli.verbose)?;
+            if literal_pathspecs {
+                global_args.push("--literal-pathspecs".to_string());
             }
-            GitCommands::Branch { args } => {
-                git::run(git::GitCommand::Branch, &args, None, cli.verbose)?;
+
+            match command {
+                GitCommands::Diff { args } => {
+                    git::run(
+                        git::GitCommand::Diff,
+                        &args,
+                        None,
+                        cli.verbose,
+                        &global_args,
+                    )?;
+                }
+                GitCommands::Log { args } => {
+                    git::run(git::GitCommand::Log, &args, None, cli.verbose, &global_args)?;
+                }
+                GitCommands::Status { args } => {
+                    git::run(
+                        git::GitCommand::Status,
+                        &args,
+                        None,
+                        cli.verbose,
+                        &global_args,
+                    )?;
+                }
+                GitCommands::Show { args } => {
+                    git::run(
+                        git::GitCommand::Show,
+                        &args,
+                        None,
+                        cli.verbose,
+                        &global_args,
+                    )?;
+                }
+                GitCommands::Add { args } => {
+                    git::run(git::GitCommand::Add, &args, None, cli.verbose, &global_args)?;
+                }
+                GitCommands::Commit { args } => {
+                    git::run(
+                        git::GitCommand::Commit,
+                        &args,
+                        None,
+                        cli.verbose,
+                        &global_args,
+                    )?;
+                }
+                GitCommands::Push { args } => {
+                    git::run(
+                        git::GitCommand::Push,
+                        &args,
+                        None,
+                        cli.verbose,
+                        &global_args,
+                    )?;
+                }
+                GitCommands::Pull { args } => {
+                    git::run(
+                        git::GitCommand::Pull,
+                        &args,
+                        None,
+                        cli.verbose,
+                        &global_args,
+                    )?;
+                }
+                GitCommands::Branch { args } => {
+                    git::run(
+                        git::GitCommand::Branch,
+                        &args,
+                        None,
+                        cli.verbose,
+                        &global_args,
+                    )?;
+                }
+                GitCommands::Fetch { args } => {
+                    git::run(
+                        git::GitCommand::Fetch,
+                        &args,
+                        None,
+                        cli.verbose,
+                        &global_args,
+                    )?;
+                }
+                GitCommands::Stash { subcommand, args } => {
+                    git::run(
+                        git::GitCommand::Stash { subcommand },
+                        &args,
+                        None,
+                        cli.verbose,
+                        &global_args,
+                    )?;
+                }
+                GitCommands::Worktree { args } => {
+                    git::run(
+                        git::GitCommand::Worktree,
+                        &args,
+                        None,
+                        cli.verbose,
+                        &global_args,
+                    )?;
+                }
+                GitCommands::Other(args) => {
+                    git::run_passthrough(&args, &global_args, cli.verbose)?;
+                }
             }
-            GitCommands::Fetch { args } => {
-                git::run(git::GitCommand::Fetch, &args, None, cli.verbose)?;
-            }
-            GitCommands::Stash { subcommand, args } => {
-                git::run(
-                    git::GitCommand::Stash { subcommand },
-                    &args,
-                    None,
-                    cli.verbose,
-                )?;
-            }
-            GitCommands::Worktree { args } => {
-                git::run(git::GitCommand::Worktree, &args, None, cli.verbose)?;
-            }
-            GitCommands::Other(args) => {
-                git::run_passthrough(&args, cli.verbose)?;
-            }
-        },
+        }
 
         Commands::Gh { subcommand, args } => {
             gh_cmd::run(&subcommand, &args, cli.verbose, cli.ultra_compact)?;
+        }
+
+        Commands::Aws { subcommand, args } => {
+            aws_cmd::run(&subcommand, &args, cli.verbose)?;
+        }
+
+        Commands::Psql { args } => {
+            psql_cmd::run(&args, cli.verbose)?;
         }
 
         Commands::Pnpm { command } => match command {
@@ -930,7 +1438,10 @@ fn main() -> Result<()> {
                 )?;
             }
             PnpmCommands::Build { args } => {
-                next_cmd::run(&args, cli.verbose)?;
+                let mut build_args: Vec<String> = vec!["build".into()];
+                build_args.extend(args);
+                let os_args: Vec<OsString> = build_args.into_iter().map(OsString::from).collect();
+                pnpm_cmd::run_passthrough(&os_args, cli.verbose)?;
             }
             PnpmCommands::Typecheck { args } => {
                 tsc_cmd::run(&args, cli.verbose)?;
@@ -966,13 +1477,8 @@ fn main() -> Result<()> {
             env_cmd::run(filter.as_deref(), show_all, cli.verbose)?;
         }
 
-        Commands::Find {
-            pattern,
-            path,
-            max,
-            file_type,
-        } => {
-            find_cmd::run(&pattern, &path, max, &file_type, cli.verbose)?;
+        Commands::Find { args } => {
+            find_cmd::run_from_args(&args, cli.verbose)?;
         }
 
         Commands::Diff { file1, file2 } => {
@@ -991,6 +1497,24 @@ fn main() -> Result<()> {
             }
         }
 
+        Commands::Dotnet { command } => match command {
+            DotnetCommands::Build { args } => {
+                dotnet_cmd::run_build(&args, cli.verbose)?;
+            }
+            DotnetCommands::Test { args } => {
+                dotnet_cmd::run_test(&args, cli.verbose)?;
+            }
+            DotnetCommands::Restore { args } => {
+                dotnet_cmd::run_restore(&args, cli.verbose)?;
+            }
+            DotnetCommands::Format { args } => {
+                dotnet_cmd::run_format(&args, cli.verbose)?;
+            }
+            DotnetCommands::Other(args) => {
+                dotnet_cmd::run_passthrough(&args, cli.verbose)?;
+            }
+        },
+
         Commands::Docker { command } => match command {
             DockerCommands::Ps => {
                 container::run(container::ContainerCmd::DockerPs, &[], cli.verbose)?;
@@ -1001,6 +1525,20 @@ fn main() -> Result<()> {
             DockerCommands::Logs { container: c } => {
                 container::run(container::ContainerCmd::DockerLogs, &[c], cli.verbose)?;
             }
+            DockerCommands::Compose { command: compose } => match compose {
+                ComposeCommands::Ps => {
+                    container::run_compose_ps(cli.verbose)?;
+                }
+                ComposeCommands::Logs { service } => {
+                    container::run_compose_logs(service.as_deref(), cli.verbose)?;
+                }
+                ComposeCommands::Build { service } => {
+                    container::run_compose_build(service.as_deref(), cli.verbose)?;
+                }
+                ComposeCommands::Other(args) => {
+                    container::run_compose_passthrough(&args, cli.verbose)?;
+                }
+            },
             DockerCommands::Other(args) => {
                 container::run_docker_passthrough(&args, cli.verbose)?;
             }
@@ -1052,6 +1590,7 @@ fn main() -> Result<()> {
             max,
             context_only,
             file_type,
+            line_numbers: _, // no-op: line numbers always enabled in grep_cmd::run
             extra_args,
         } => {
             grep_cmd::run(
@@ -1068,6 +1607,7 @@ fn main() -> Result<()> {
 
         Commands::Init {
             global,
+            opencode,
             show,
             claude_md,
             hook_only,
@@ -1080,6 +1620,9 @@ fn main() -> Result<()> {
             } else if uninstall {
                 init::uninstall(global, cli.verbose)?;
             } else {
+                let install_opencode = opencode;
+                let install_claude = !opencode;
+
                 let patch_mode = if auto_patch {
                     init::PatchMode::Auto
                 } else if no_patch {
@@ -1087,16 +1630,16 @@ fn main() -> Result<()> {
                 } else {
                     init::PatchMode::Ask
                 };
-                init::run(global, claude_md, hook_only, patch_mode, cli.verbose)?;
+                init::run(
+                    global,
+                    install_claude,
+                    install_opencode,
+                    claude_md,
+                    hook_only,
+                    patch_mode,
+                    cli.verbose,
+                )?;
             }
-        }
-
-        Commands::HookAudit { since } => {
-            hook_audit_cmd::run(since, cli.verbose)?;
-        }
-
-        Commands::Wc { args } => {
-            wc_cmd::run(&args, cli.verbose)?;
         }
 
         Commands::Wget { url, stdout, args } => {
@@ -1107,7 +1650,12 @@ fn main() -> Result<()> {
             }
         }
 
+        Commands::Wc { args } => {
+            wc_cmd::run(&args, cli.verbose)?;
+        }
+
         Commands::Gain {
+            project, // added
             graph,
             history,
             quota,
@@ -1117,8 +1665,10 @@ fn main() -> Result<()> {
             monthly,
             all,
             format,
+            failures,
         } => {
             gain::run(
+                project, // added: pass project flag
                 graph,
                 history,
                 quota,
@@ -1128,6 +1678,7 @@ fn main() -> Result<()> {
                 monthly,
                 all,
                 &format,
+                failures,
                 cli.verbose,
             )?;
         }
@@ -1261,6 +1812,10 @@ fn main() -> Result<()> {
             discover::run(project.as_deref(), all, since, limit, &format, cli.verbose)?;
         }
 
+        Commands::Session {} => {
+            session_cmd::run(cli.verbose)?;
+        }
+
         Commands::Learn {
             project,
             all,
@@ -1316,7 +1871,7 @@ fn main() -> Result<()> {
                             _ => {
                                 // Passthrough other prisma subcommands
                                 let timer = tracking::TimedExecution::start();
-                                let mut cmd = std::process::Command::new("npx");
+                                let mut cmd = utils::resolved_command("npx");
                                 for arg in &args {
                                     cmd.arg(arg);
                                 }
@@ -1333,7 +1888,7 @@ fn main() -> Result<()> {
                         }
                     } else {
                         let timer = tracking::TimedExecution::start();
-                        let status = std::process::Command::new("npx")
+                        let status = utils::resolved_command("npx")
                             .arg("prisma")
                             .status()
                             .context("Failed to run npx prisma")?;
@@ -1367,6 +1922,10 @@ fn main() -> Result<()> {
             pytest_cmd::run(&args, cli.verbose)?;
         }
 
+        Commands::Mypy { args } => {
+            mypy_cmd::run(&args, cli.verbose)?;
+        }
+
         Commands::Pip { args } => {
             pip_cmd::run(&args, cli.verbose)?;
         }
@@ -1386,12 +1945,47 @@ fn main() -> Result<()> {
             }
         },
 
+        Commands::Gt { command } => match command {
+            GtCommands::Log { args } => {
+                gt_cmd::run_log(&args, cli.verbose)?;
+            }
+            GtCommands::Submit { args } => {
+                gt_cmd::run_submit(&args, cli.verbose)?;
+            }
+            GtCommands::Sync { args } => {
+                gt_cmd::run_sync(&args, cli.verbose)?;
+            }
+            GtCommands::Restack { args } => {
+                gt_cmd::run_restack(&args, cli.verbose)?;
+            }
+            GtCommands::Create { args } => {
+                gt_cmd::run_create(&args, cli.verbose)?;
+            }
+            GtCommands::Branch { args } => {
+                gt_cmd::run_branch(&args, cli.verbose)?;
+            }
+            GtCommands::Other(args) => {
+                gt_cmd::run_other(&args, cli.verbose)?;
+            }
+        },
+
         Commands::GolangciLint { args } => {
             golangci_cmd::run(&args, cli.verbose)?;
         }
 
+        Commands::HookAudit { since } => {
+            hook_audit_cmd::run(since, cli.verbose)?;
+        }
+
+        Commands::Rewrite { args } => {
+            let cmd = args.join(" ");
+            rewrite_cmd::run(&cmd)?;
+        }
+
         Commands::Proxy { args } => {
-            use std::process::Command;
+            use std::io::{Read, Write};
+            use std::process::Stdio;
+            use std::thread;
 
             if args.is_empty() {
                 anyhow::bail!(
@@ -1401,28 +1995,99 @@ fn main() -> Result<()> {
 
             let timer = tracking::TimedExecution::start();
 
-            let cmd_name = args[0].to_string_lossy();
-            let cmd_args: Vec<String> = args[1..]
-                .iter()
-                .map(|s| s.to_string_lossy().into_owned())
-                .collect();
+            // If a single quoted arg contains spaces, split it respecting quotes (#388).
+            // e.g. rtk proxy 'head -50 file.php' → cmd=head, args=["-50", "file.php"]
+            // e.g. rtk proxy 'git log --format="%H %s"' → cmd=git, args=["log", "--format=%H %s"]
+            let (cmd_name, cmd_args): (String, Vec<String>) = if args.len() == 1 {
+                let full = args[0].to_string_lossy();
+                let parts = shell_split(&full);
+                if parts.len() > 1 {
+                    (parts[0].clone(), parts[1..].to_vec())
+                } else {
+                    (full.into_owned(), vec![])
+                }
+            } else {
+                (
+                    args[0].to_string_lossy().into_owned(),
+                    args[1..]
+                        .iter()
+                        .map(|s| s.to_string_lossy().into_owned())
+                        .collect(),
+                )
+            };
 
             if cli.verbose > 0 {
                 eprintln!("Proxy mode: {} {}", cmd_name, cmd_args.join(" "));
             }
 
-            let output = Command::new(cmd_name.as_ref())
+            let mut child = utils::resolved_command(cmd_name.as_ref())
                 .args(&cmd_args)
-                .output()
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
                 .context(format!("Failed to execute command: {}", cmd_name))?;
 
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            let full_output = format!("{}{}", stdout, stderr);
+            let stdout_pipe = child
+                .stdout
+                .take()
+                .context("Failed to capture child stdout")?;
+            let stderr_pipe = child
+                .stderr
+                .take()
+                .context("Failed to capture child stderr")?;
 
-            // Print output
-            print!("{}", stdout);
-            eprint!("{}", stderr);
+            let stdout_handle = thread::spawn(move || -> std::io::Result<Vec<u8>> {
+                let mut reader = stdout_pipe;
+                let mut captured = Vec::new();
+                let mut buf = [0u8; 8192];
+
+                loop {
+                    let count = reader.read(&mut buf)?;
+                    if count == 0 {
+                        break;
+                    }
+                    captured.extend_from_slice(&buf[..count]);
+                    let mut out = std::io::stdout().lock();
+                    out.write_all(&buf[..count])?;
+                    out.flush()?;
+                }
+
+                Ok(captured)
+            });
+
+            let stderr_handle = thread::spawn(move || -> std::io::Result<Vec<u8>> {
+                let mut reader = stderr_pipe;
+                let mut captured = Vec::new();
+                let mut buf = [0u8; 8192];
+
+                loop {
+                    let count = reader.read(&mut buf)?;
+                    if count == 0 {
+                        break;
+                    }
+                    captured.extend_from_slice(&buf[..count]);
+                    let mut err = std::io::stderr().lock();
+                    err.write_all(&buf[..count])?;
+                    err.flush()?;
+                }
+
+                Ok(captured)
+            });
+
+            let status = child
+                .wait()
+                .context(format!("Failed waiting for command: {}", cmd_name))?;
+
+            let stdout_bytes = stdout_handle
+                .join()
+                .map_err(|_| anyhow::anyhow!("stdout streaming thread panicked"))??;
+            let stderr_bytes = stderr_handle
+                .join()
+                .map_err(|_| anyhow::anyhow!("stderr streaming thread panicked"))??;
+
+            let stdout = String::from_utf8_lossy(&stdout_bytes);
+            let stderr = String::from_utf8_lossy(&stderr_bytes);
+            let full_output = format!("{}{}", stdout, stderr);
 
             // Track usage (input = output since no filtering)
             timer.track(
@@ -1433,11 +2098,416 @@ fn main() -> Result<()> {
             );
 
             // Exit with same code as child process
-            if !output.status.success() {
-                std::process::exit(output.status.code().unwrap_or(1));
+            if !status.success() {
+                std::process::exit(status.code().unwrap_or(1));
+            }
+        }
+
+        Commands::Trust { list } => {
+            trust::run_trust(list)?;
+        }
+
+        Commands::Untrust => {
+            trust::run_untrust()?;
+        }
+
+        Commands::Verify {
+            filter,
+            require_all,
+        } => {
+            if filter.is_some() {
+                // Filter-specific mode: run only that filter's tests
+                verify_cmd::run(filter, require_all)?;
+            } else {
+                // Default or --require-all: always run integrity check first
+                integrity::run_verify(cli.verbose)?;
+                verify_cmd::run(None, require_all)?;
             }
         }
     }
 
     Ok(())
+}
+
+/// Returns true for commands that are invoked via the hook pipeline
+/// (i.e., commands that process rewritten shell commands).
+/// Meta commands (init, gain, verify, etc.) are excluded because
+/// they are run directly by the user, not through the hook.
+/// Returns true for commands that go through the hook pipeline
+/// and therefore require integrity verification.
+///
+/// SECURITY: whitelist pattern — new commands are NOT integrity-checked
+/// until explicitly added here. A forgotten command fails open (no check)
+/// rather than creating false confidence about what's protected.
+fn is_operational_command(cmd: &Commands) -> bool {
+    matches!(
+        cmd,
+        Commands::Ls { .. }
+            | Commands::Tree { .. }
+            | Commands::Read { .. }
+            | Commands::Smart { .. }
+            | Commands::Git { .. }
+            | Commands::Gh { .. }
+            | Commands::Pnpm { .. }
+            | Commands::Err { .. }
+            | Commands::Test { .. }
+            | Commands::Json { .. }
+            | Commands::Deps { .. }
+            | Commands::Env { .. }
+            | Commands::Find { .. }
+            | Commands::Diff { .. }
+            | Commands::Log { .. }
+            | Commands::Dotnet { .. }
+            | Commands::Docker { .. }
+            | Commands::Kubectl { .. }
+            | Commands::Summary { .. }
+            | Commands::Grep { .. }
+            | Commands::Wget { .. }
+            | Commands::Vitest { .. }
+            | Commands::Prisma { .. }
+            | Commands::Tsc { .. }
+            | Commands::Next { .. }
+            | Commands::Lint { .. }
+            | Commands::Prettier { .. }
+            | Commands::Playwright { .. }
+            | Commands::Cargo { .. }
+            | Commands::Npm { .. }
+            | Commands::Npx { .. }
+            | Commands::Curl { .. }
+            | Commands::Ruff { .. }
+            | Commands::Pytest { .. }
+            | Commands::Pip { .. }
+            | Commands::Go { .. }
+            | Commands::GolangciLint { .. }
+            | Commands::Gt { .. }
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::Parser;
+
+    #[test]
+    fn test_git_commit_single_message() {
+        let cli = Cli::try_parse_from(["rtk", "git", "commit", "-m", "fix: typo"]).unwrap();
+        match cli.command {
+            Commands::Git {
+                command: GitCommands::Commit { args },
+                ..
+            } => {
+                assert_eq!(args, vec!["-m", "fix: typo"]);
+            }
+            _ => panic!("Expected Git Commit command"),
+        }
+    }
+
+    #[test]
+    fn test_git_commit_multiple_messages() {
+        let cli = Cli::try_parse_from([
+            "rtk",
+            "git",
+            "commit",
+            "-m",
+            "feat: add support",
+            "-m",
+            "Body paragraph here.",
+        ])
+        .unwrap();
+        match cli.command {
+            Commands::Git {
+                command: GitCommands::Commit { args },
+                ..
+            } => {
+                assert_eq!(
+                    args,
+                    vec!["-m", "feat: add support", "-m", "Body paragraph here."]
+                );
+            }
+            _ => panic!("Expected Git Commit command"),
+        }
+    }
+
+    // #327: git commit -am "msg" was rejected by Clap
+    #[test]
+    fn test_git_commit_am_flag() {
+        let cli = Cli::try_parse_from(["rtk", "git", "commit", "-am", "quick fix"]).unwrap();
+        match cli.command {
+            Commands::Git {
+                command: GitCommands::Commit { args },
+                ..
+            } => {
+                assert_eq!(args, vec!["-am", "quick fix"]);
+            }
+            _ => panic!("Expected Git Commit command"),
+        }
+    }
+
+    #[test]
+    fn test_git_commit_amend() {
+        let cli =
+            Cli::try_parse_from(["rtk", "git", "commit", "--amend", "-m", "new msg"]).unwrap();
+        match cli.command {
+            Commands::Git {
+                command: GitCommands::Commit { args },
+                ..
+            } => {
+                assert_eq!(args, vec!["--amend", "-m", "new msg"]);
+            }
+            _ => panic!("Expected Git Commit command"),
+        }
+    }
+
+    #[test]
+    fn test_git_global_options_parsing() {
+        let cli =
+            Cli::try_parse_from(["rtk", "git", "--no-pager", "--no-optional-locks", "status"])
+                .unwrap();
+        match cli.command {
+            Commands::Git {
+                no_pager,
+                no_optional_locks,
+                bare,
+                literal_pathspecs,
+                ..
+            } => {
+                assert!(no_pager);
+                assert!(no_optional_locks);
+                assert!(!bare);
+                assert!(!literal_pathspecs);
+            }
+            _ => panic!("Expected Git command"),
+        }
+    }
+
+    #[test]
+    fn test_git_commit_long_flag_multiple() {
+        let cli = Cli::try_parse_from([
+            "rtk",
+            "git",
+            "commit",
+            "--message",
+            "title",
+            "--message",
+            "body",
+            "--message",
+            "footer",
+        ])
+        .unwrap();
+        match cli.command {
+            Commands::Git {
+                command: GitCommands::Commit { args },
+                ..
+            } => {
+                assert_eq!(
+                    args,
+                    vec![
+                        "--message",
+                        "title",
+                        "--message",
+                        "body",
+                        "--message",
+                        "footer"
+                    ]
+                );
+            }
+            _ => panic!("Expected Git Commit command"),
+        }
+    }
+
+    #[test]
+    fn test_try_parse_valid_git_status() {
+        let result = Cli::try_parse_from(["rtk", "git", "status"]);
+        assert!(result.is_ok(), "git status should parse successfully");
+    }
+
+    #[test]
+    fn test_try_parse_help_is_display_help() {
+        match Cli::try_parse_from(["rtk", "--help"]) {
+            Err(e) => assert_eq!(e.kind(), ErrorKind::DisplayHelp),
+            Ok(_) => panic!("Expected DisplayHelp error"),
+        }
+    }
+
+    #[test]
+    fn test_try_parse_version_is_display_version() {
+        match Cli::try_parse_from(["rtk", "--version"]) {
+            Err(e) => assert_eq!(e.kind(), ErrorKind::DisplayVersion),
+            Ok(_) => panic!("Expected DisplayVersion error"),
+        }
+    }
+
+    #[test]
+    fn test_try_parse_unknown_subcommand_is_error() {
+        match Cli::try_parse_from(["rtk", "nonexistent-command"]) {
+            Err(e) => assert!(!matches!(
+                e.kind(),
+                ErrorKind::DisplayHelp | ErrorKind::DisplayVersion
+            )),
+            Ok(_) => panic!("Expected parse error for unknown subcommand"),
+        }
+    }
+
+    #[test]
+    fn test_try_parse_git_with_dash_c_succeeds() {
+        let result = Cli::try_parse_from(["rtk", "git", "-C", "/path", "status"]);
+        assert!(
+            result.is_ok(),
+            "git -C /path status should parse successfully"
+        );
+        if let Ok(cli) = result {
+            match cli.command {
+                Commands::Git { directory, .. } => {
+                    assert_eq!(directory, vec!["/path"]);
+                }
+                _ => panic!("Expected Git command"),
+            }
+        }
+    }
+
+    #[test]
+    fn test_gain_failures_flag_parses() {
+        let result = Cli::try_parse_from(["rtk", "gain", "--failures"]);
+        assert!(result.is_ok());
+        if let Ok(cli) = result {
+            match cli.command {
+                Commands::Gain { failures, .. } => assert!(failures),
+                _ => panic!("Expected Gain command"),
+            }
+        }
+    }
+
+    #[test]
+    fn test_gain_failures_short_flag_parses() {
+        let result = Cli::try_parse_from(["rtk", "gain", "-F"]);
+        assert!(result.is_ok());
+        if let Ok(cli) = result {
+            match cli.command {
+                Commands::Gain { failures, .. } => assert!(failures),
+                _ => panic!("Expected Gain command"),
+            }
+        }
+    }
+
+    #[test]
+    fn test_meta_commands_reject_bad_flags() {
+        // RTK meta-commands should produce parse errors (not fall through to raw execution).
+        // Skip "proxy" because it uses trailing_var_arg (accepts any args by design).
+        for cmd in RTK_META_COMMANDS {
+            if matches!(*cmd, "proxy" | "rewrite" | "session") {
+                continue; // these use trailing_var_arg (accept any args by design)
+            }
+            let result = Cli::try_parse_from(["rtk", cmd, "--nonexistent-flag-xyz"]);
+            assert!(
+                result.is_err(),
+                "Meta-command '{}' with bad flag should fail to parse",
+                cmd
+            );
+        }
+    }
+
+    #[test]
+    fn test_meta_command_list_is_complete() {
+        // Verify all meta-commands are in the guard list by checking they parse with valid syntax
+        let meta_cmds_that_parse = [
+            vec!["rtk", "gain"],
+            vec!["rtk", "discover"],
+            vec!["rtk", "learn"],
+            vec!["rtk", "init"],
+            vec!["rtk", "config"],
+            vec!["rtk", "proxy", "echo", "hi"],
+            vec!["rtk", "hook-audit"],
+            vec!["rtk", "cc-economics"],
+        ];
+        for args in &meta_cmds_that_parse {
+            let result = Cli::try_parse_from(args.iter());
+            assert!(
+                result.is_ok(),
+                "Meta-command {:?} should parse successfully",
+                args
+            );
+        }
+    }
+
+    #[test]
+    fn test_shell_split_simple() {
+        assert_eq!(
+            shell_split("head -50 file.php"),
+            vec!["head", "-50", "file.php"]
+        );
+    }
+
+    #[test]
+    fn test_shell_split_double_quotes() {
+        assert_eq!(
+            shell_split(r#"git log --format="%H %s""#),
+            vec!["git", "log", "--format=%H %s"]
+        );
+    }
+
+    #[test]
+    fn test_shell_split_single_quotes() {
+        assert_eq!(
+            shell_split("grep -r 'hello world' ."),
+            vec!["grep", "-r", "hello world", "."]
+        );
+    }
+
+    #[test]
+    fn test_shell_split_single_word() {
+        assert_eq!(shell_split("ls"), vec!["ls"]);
+    }
+
+    #[test]
+    fn test_shell_split_empty() {
+        let result: Vec<String> = shell_split("");
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_rewrite_clap_multi_args() {
+        // This is the bug KuSh reported: `rtk rewrite ls -al` failed because
+        // Clap rejected `-al` as an unknown flag. With trailing_var_arg + allow_hyphen_values,
+        // multiple args are accepted and joined into a single command string.
+        let cases = vec![
+            vec!["rtk", "rewrite", "ls", "-al"],
+            vec!["rtk", "rewrite", "git", "status"],
+            vec!["rtk", "rewrite", "npm", "exec"],
+            vec!["rtk", "rewrite", "cargo", "test"],
+            vec!["rtk", "rewrite", "du", "-sh", "."],
+            vec!["rtk", "rewrite", "head", "-50", "file.txt"],
+        ];
+        for args in &cases {
+            let result = Cli::try_parse_from(args.iter());
+            assert!(
+                result.is_ok(),
+                "rtk rewrite {:?} should parse (was failing before trailing_var_arg fix)",
+                &args[2..]
+            );
+            if let Ok(cli) = result {
+                match cli.command {
+                    Commands::Rewrite { ref args } => {
+                        assert!(args.len() >= 2, "rewrite args should capture all tokens");
+                    }
+                    _ => panic!("expected Rewrite command"),
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_rewrite_clap_quoted_single_arg() {
+        // Quoted form: `rtk rewrite "git status"` — single arg containing spaces
+        let result = Cli::try_parse_from(["rtk", "rewrite", "git status"]);
+        assert!(result.is_ok());
+        if let Ok(cli) = result {
+            match cli.command {
+                Commands::Rewrite { ref args } => {
+                    assert_eq!(args.len(), 1);
+                    assert_eq!(args[0], "git status");
+                }
+                _ => panic!("expected Rewrite command"),
+            }
+        }
+    }
 }

@@ -1,6 +1,6 @@
 use crate::tracking;
+use crate::utils::resolved_command;
 use anyhow::{Context, Result};
-use std::process::Command;
 
 /// Noise directories commonly excluded from LLM context
 const NOISE_DIRS: &[&str] = &[
@@ -51,7 +51,7 @@ pub fn run(args: &[String], verbose: u8) -> Result<()> {
 
     // Build ls -la + any extra flags the user passed (e.g. -R)
     // Strip -l, -a, -h (we handle all of these ourselves)
-    let mut cmd = Command::new("ls");
+    let mut cmd = resolved_command("ls");
     cmd.arg("-la");
     for flag in &flags {
         if flag.starts_with("--") {
@@ -109,18 +109,12 @@ pub fn run(args: &[String], verbose: u8) -> Result<()> {
     } else {
         paths.join(" ")
     };
-    if let Some(hint) = crate::tee::tee_and_hint(&raw, "ls", 0) {
-        print!("{}", filtered);
-        println!("{}", hint);
-    } else {
-        print!("{}", filtered);
-    }
-    timer.track_tagged(
+    print!("{}", filtered);
+    timer.track(
         &format!("ls -la {}", target_display),
         "rtk ls",
         &raw,
         &filtered,
-        "ks:tee",
     );
 
     Ok(())

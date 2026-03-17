@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **rtk (Rust Token Killer)** is a high-performance CLI proxy that minimizes LLM token consumption by filtering and compressing command outputs. It achieves 60-90% token savings on common development operations through smart filtering, grouping, truncation, and deduplication.
 
-This is ks-rtk, our fork of rtk-ai/rtk. See FORK.md for what we've changed.
+This is a fork with critical fixes for git argument parsing and modern JavaScript stack support (pnpm, vitest, Next.js, TypeScript, Playwright, Prisma).
 
 ### ⚠️ Name Collision Warning
 
@@ -16,7 +16,7 @@ This is ks-rtk, our fork of rtk-ai/rtk. See FORK.md for what we've changed.
 
 **Verify correct installation:**
 ```bash
-rtk --version  # Should show "rtk 0.20.1" (or newer)
+rtk --version  # Should show "rtk 0.28.2" (or newer)
 rtk gain       # Should show token savings stats (NOT "command not found")
 ```
 
@@ -28,45 +28,14 @@ If `rtk gain` fails, you have the wrong package installed.
 > All commands work with passthrough support even for subcommands rtk doesn't specifically handle.
 
 ### Build & Run
-
-#### Container Build Setup
-
-This project runs in a container environment. Before any `cargo` commands:
-
-```bash
-source /home/ubuntu/.cargo/env
-```
-
-**Fake pkg-config setup** (required if `/tmp` was cleared — rusqlite needs a libsqlite3 symlink):
-
-```bash
-mkdir -p /tmp/fake-pkgconfig /tmp/fakelibs
-ln -sf /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 /tmp/fakelibs/libsqlite3.so
-cat > /tmp/fake-pkgconfig/sqlite3.pc << 'EOF'
-prefix=/usr
-libdir=/tmp/fakelibs
-includedir=${prefix}/include
-Name: SQLite
-Version: 3.0.0
-Libs: -L${libdir} -lsqlite3
-Cflags:
-EOF
-```
-
-**LTO disabled**: `.cargo/config.toml` sets `rustflags = ["-C", "lto=off"]` because the container lacks `liblto_plugin.so`. The build still uses `opt-level=3` and `strip`.
-
-**Deploy**: Container mounts are read-only. After building, deploy from the host:
-```bash
-sudo cp target/release/rtk /usr/local/bin/rtk
-```
-
 ```bash
 # Development build
 cargo build                   # raw
 rtk cargo build               # preferred (token-optimized)
 
-# Release build (optimized) - Container-specific command required:
-LIBSQLITE3_SYS_USE_PKG_CONFIG=1 PKG_CONFIG_PATH=/tmp/fake-pkgconfig LIBRARY_PATH=/tmp/fakelibs cargo build --release
+# Release build (optimized)
+cargo build --release
+rtk cargo build --release
 
 # Run directly
 cargo run -- <command>
@@ -110,6 +79,18 @@ rtk cargo clippy              # preferred (token-optimized)
 # Check all targets
 cargo clippy --all-targets
 rtk cargo clippy --all-targets
+```
+
+### Package Building
+```bash
+# Build DEB package (Linux)
+cargo install cargo-deb
+cargo deb
+
+# Build RPM package (Fedora/RHEL)
+cargo install cargo-generate-rpm
+cargo build --release
+cargo generate-rpm
 ```
 
 ## Architecture
@@ -245,6 +226,7 @@ rtk gain --history | grep proxy
 | pnpm_cmd.rs | pnpm package manager | Compact dependency trees (70-90% reduction) |
 | ruff_cmd.rs | Ruff linter/formatter | JSON for check, text for format (80%+ reduction) |
 | pytest_cmd.rs | Pytest test runner | State machine text parser (90%+ reduction) |
+| mypy_cmd.rs | Mypy type checker | Group by file/error code (80% reduction) |
 | pip_cmd.rs | pip/uv package manager | JSON parsing, auto-detect uv (70-85% reduction) |
 | go_cmd.rs | Go commands | NDJSON for test, text for build/vet (80-90% reduction) |
 | golangci_cmd.rs | golangci-lint | JSON parsing, group by rule (85% reduction) |
@@ -373,6 +355,43 @@ pub fn execute_with_filter(cmd: &str, args: &[&str]) -> Result<()> {
 - Preserve stdout/stderr separation
 - Respect exit codes (0 = success, non-zero = failure)
 
+## Fork-Specific Features
+
+### PR #5: Git Argument Parsing Fix (CRITICAL)
+- **Problem**: Git flags like `--oneline`, `--cached` were rejected
+- **Solution**: Fixed Clap parsing with proper trailing_var_arg configuration
+- **Impact**: All git commands now accept native git flags
+
+### PR #6: pnpm Support
+- **New Commands**: `rtk pnpm list`, `rtk pnpm outdated`, `rtk pnpm install`
+- **Token Savings**: 70-90% reduction on package manager operations
+- **Security**: Package name validation prevents command injection
+
+### PR #9: Modern JavaScript/TypeScript Tooling (2026-01-29)
+- **New Commands**: 6 commands for T3 Stack workflows
+  - `rtk lint`: ESLint/Biome with grouped rule violations (84% reduction)
+  - `rtk tsc`: TypeScript compiler errors grouped by file/code (83% reduction)
+  - `rtk next`: Next.js build with route/bundle metrics (87% reduction)
+  - `rtk prettier`: Format checker showing files needing changes (70% reduction)
+  - `rtk playwright`: E2E test results showing failures only (94% reduction)
+  - `rtk prisma`: Prisma CLI without ASCII art (88% reduction)
+- **Shared Infrastructure**: utils.rs module for package manager auto-detection
+- **Features**: Exit code preservation, error grouping, consistent formatting
+- **Testing**: Validated on a production T3 Stack project
+
+### Python & Go Support (2026-02-12)
+- **Python Commands**: 3 commands for Python development workflows
+  - `rtk ruff check/format`: Ruff linter/formatter with JSON (check) and text (format) parsing (80%+ reduction)
+  - `rtk pytest`: Pytest test runner with state machine text parser (90%+ reduction)
+  - `rtk pip list/outdated/install`: pip package manager with auto-detect uv (70-85% reduction)
+- **Go Commands**: 4 commands via sub-enum for Go ecosystem
+  - `rtk go test`: NDJSON line-by-line parser for interleaved events (90%+ reduction)
+  - `rtk go build`: Text filter showing errors only (80% reduction)
+  - `rtk go vet`: Text filter for issues (75% reduction)
+  - `rtk golangci-lint`: JSON parsing grouped by rule (85% reduction)
+- **Architecture**: Standalone Python commands (mirror lint/prettier), Go sub-enum (mirror git/cargo)
+- **Patterns**: JSON for structured output (ruff check, golangci-lint, pip), NDJSON streaming (go test), text state machine (pytest), text filters (go build/vet, ruff format)
+
 ## Testing Strategy
 
 ### TDD Workflow (mandatory)
@@ -406,6 +425,23 @@ Core dependencies (see Cargo.toml):
 - **ignore**: gitignore-aware file traversal
 - **colored**: Terminal output formatting
 - **serde/serde_json**: Configuration and JSON parsing
+
+## Build Optimizations
+
+Release profile (Cargo.toml:31-36):
+- `opt-level = 3`: Maximum optimization
+- `lto = true`: Link-time optimization
+- `codegen-units = 1`: Single codegen for better optimization
+- `strip = true`: Remove debug symbols
+- `panic = "abort"`: Smaller binary size
+
+## CI/CD
+
+GitHub Actions workflow (.github/workflows/release.yml):
+- Multi-platform builds (macOS, Linux x86_64/ARM64, Windows)
+- DEB/RPM package generation
+- Automated releases on version tags (v*)
+- Checksums for binary verification
 
 ## Build Verification (Mandatory)
 
@@ -455,7 +491,10 @@ hyperfine 'target/release/rtk git log -10' --warmup 3
   - Benchmark again: `hyperfine 'target/release/rtk git status' --warmup 3`
   - Compare results: startup time should be <10ms
 
-- **For cross-platform**: We run Linux only in this environment — test here, trust CI for other platforms
+- **For cross-platform**: Test on macOS + Linux (Docker) + Windows (CI), verify shell escaping
+  - macOS (zsh): Test locally
+  - Linux (bash): Use Docker `docker run --rm -v $(pwd):/rtk -w /rtk rust:latest cargo test`
+  - Windows (PowerShell): Trust CI/CD pipeline or test manually if available
 
 **Anti-pattern**: Running only automated tests (`cargo test`, `cargo clippy`) without actually executing `rtk <cmd>` and inspecting output.
 
@@ -470,13 +509,11 @@ hyperfine 'target/release/rtk git log -10' --warmup 3
 **ALWAYS confirm working directory before starting any work**:
 
 ```bash
-pwd  # Verify you're in /home/ubuntu/workspace/.vibe-kanban-workspaces/14a2-rtk-upgrade/ks-rtk
+pwd  # Verify you're in the rtk project root
 git branch  # Verify correct branch (main, feature/*, etc.)
 ```
 
-**Never assume** which project to work in. ks-rtk shares parent directory with other workspace projects.
-
-**Context**: Wrong directory detection was a common friction point in multi-repo environments. Always verify before file operations.
+**Never assume** which project to work in. Always verify before file operations.
 
 ## Avoiding Rabbit Holes
 
@@ -507,16 +544,6 @@ When user provides a numbered plan (QW1-QW4, Phase 1-5, sprint tasks, etc.):
 
 **Why**: Plan-driven execution produces better outcomes than ad-hoc implementation. Structured plans help maintain focus and prevent scope creep.
 
-## Language & Communication
-
-- **Language**: English always
-- **"reprend"**: Resume previous task where it was left off
-- **Be direct**: User prefers direct, factual communication — state the problem, state the fix, no hedging
-
-**Examples**:
-- ✅ "This won't work because X. Here's what I'd do: Y."
-- ✅ "Test fails because regex doesn't capture merge commits. Fix: add `(?:Merge|commit)`."
-- ❌ "I think perhaps we could eventually consider..." (too verbose, not direct)
 
 ## Filter Development Checklist
 

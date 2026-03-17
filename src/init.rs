@@ -4,11 +4,47 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use tempfile::NamedTempFile;
 
+use crate::integrity;
+
 // Embedded hook script (guards before set -euo pipefail)
 const REWRITE_HOOK: &str = include_str!("../hooks/rtk-rewrite.sh");
 
+// Embedded OpenCode plugin (auto-rewrite)
+const OPENCODE_PLUGIN: &str = include_str!("../hooks/opencode-rtk.ts");
+
 // Embedded slim RTK awareness instructions
 const RTK_SLIM: &str = include_str!("../hooks/rtk-awareness.md");
+
+/// Template written by `rtk init` when no filters.toml exists yet.
+const FILTERS_TEMPLATE: &str = r#"# Project-local RTK filters — commit this file with your repo.
+# Filters here override user-global and built-in filters.
+# Docs: https://github.com/rtk-ai/rtk#custom-filters
+schema_version = 1
+
+# Example: suppress build noise from a custom tool
+# [filters.my-tool]
+# description = "Compact my-tool output"
+# match_command = "^my-tool\\s+build"
+# strip_ansi = true
+# strip_lines_matching = ["^\\s*$", "^Downloading", "^Installing"]
+# max_lines = 30
+# on_empty = "my-tool: ok"
+"#;
+
+/// Template for user-global filters (~/.config/rtk/filters.toml).
+const FILTERS_GLOBAL_TEMPLATE: &str = r#"# User-global RTK filters — apply to all your projects.
+# Project-local .rtk/filters.toml takes precedence over these.
+# Docs: https://github.com/rtk-ai/rtk#custom-filters
+schema_version = 1
+
+# Example: suppress noise from a tool you use everywhere
+# [filters.my-global-tool]
+# description = "Compact my-global-tool output"
+# match_command = "^my-global-tool\\b"
+# strip_ansi = true
+# strip_lines_matching = ["^\\s*$"]
+# max_lines = 40
+"#;
 
 /// Control flow for settings.json patching
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -166,16 +202,26 @@ Overall average: **60-90% token reduction** on common development operations.
 /// Main entry point for `rtk init`
 pub fn run(
     global: bool,
+    install_claude: bool,
+    install_opencode: bool,
     claude_md: bool,
     hook_only: bool,
     patch_mode: PatchMode,
     verbose: u8,
 ) -> Result<()> {
+    if install_opencode && !global {
+        anyhow::bail!("OpenCode plugin is global-only. Use: rtk init -g --opencode");
+    }
+
     // Mode selection
-    match (claude_md, hook_only) {
-        (true, _) => run_claude_md_mode(global, verbose),
-        (false, true) => run_hook_only_mode(global, patch_mode, verbose),
-        (false, false) => run_default_mode(global, patch_mode, verbose),
+    match (install_claude, install_opencode, claude_md, hook_only) {
+        (false, true, _, _) => run_opencode_only_mode(verbose),
+        (true, opencode, true, _) => run_claude_md_mode(global, verbose, opencode),
+        (true, opencode, false, true) => run_hook_only_mode(global, patch_mode, verbose, opencode),
+        (true, opencode, false, false) => run_default_mode(global, patch_mode, verbose, opencode),
+        (false, false, _, _) => {
+            anyhow::bail!("at least one of install_claude or install_opencode must be true")
+        }
     }
 }
 
@@ -222,6 +268,15 @@ fn ensure_hook_installed(hook_path: &Path, verbose: u8) -> Result<bool> {
     use std::os::unix::fs::PermissionsExt;
     fs::set_permissions(hook_path, fs::Permissions::from_mode(0o755))
         .with_context(|| format!("Failed to set hook permissions: {}", hook_path.display()))?;
+
+    // Store SHA-256 hash for runtime integrity verification.
+    // Always store (idempotent) to ensure baseline exists even for
+    // hooks installed before integrity checks were added.
+    integrity::store_hash(hook_path)
+        .with_context(|| format!("Failed to store integrity hash for {}", hook_path.display()))?;
+    if verbose > 0 && changed {
+        eprintln!("Stored integrity hash for hook");
+    }
 
     Ok(changed)
 }
@@ -311,7 +366,7 @@ fn prompt_user_consent(settings_path: &Path) -> Result<bool> {
 }
 
 /// Print manual instructions for settings.json patching
-fn print_manual_instructions(hook_path: &Path) {
+fn print_manual_instructions(hook_path: &Path, include_opencode: bool) {
     println!("\n  MANUAL STEP: Add this to ~/.claude/settings.json:");
     println!("  {{");
     println!("    \"hooks\": {{ \"PreToolUse\": [{{");
@@ -321,7 +376,11 @@ fn print_manual_instructions(hook_path: &Path) {
     println!("      }}]");
     println!("    }}]}}");
     println!("  }}");
-    println!("\n  Then restart Claude Code. Test with: git status\n");
+    if include_opencode {
+        println!("\n  Then restart Claude Code and OpenCode. Test with: git status\n");
+    } else {
+        println!("\n  Then restart Claude Code. Test with: git status\n");
+    }
 }
 
 /// Remove RTK hook entry from settings.json
@@ -416,6 +475,11 @@ pub fn uninstall(global: bool, verbose: u8) -> Result<()> {
         removed.push(format!("Hook: {}", hook_path.display()));
     }
 
+    // 1b. Remove integrity hash file
+    if integrity::remove_hash(&hook_path)? {
+        removed.push("Integrity hash: removed".to_string());
+    }
+
     // 2. Remove RTK.md
     let rtk_md_path = claude_dir.join("RTK.md");
     if rtk_md_path.exists() {
@@ -452,6 +516,12 @@ pub fn uninstall(global: bool, verbose: u8) -> Result<()> {
         removed.push("settings.json: removed RTK hook entry".to_string());
     }
 
+    // 5. Remove OpenCode plugin
+    let opencode_removed = remove_opencode_plugin(verbose)?;
+    for path in opencode_removed {
+        removed.push(format!("OpenCode plugin: {}", path.display()));
+    }
+
     // Report results
     if removed.is_empty() {
         println!("RTK was not installed (nothing to remove)");
@@ -460,7 +530,7 @@ pub fn uninstall(global: bool, verbose: u8) -> Result<()> {
         for item in removed {
             println!("  - {}", item);
         }
-        println!("\nRestart Claude Code to apply changes.");
+        println!("\nRestart Claude Code and OpenCode (if used) to apply changes.");
     }
 
     Ok(())
@@ -468,7 +538,12 @@ pub fn uninstall(global: bool, verbose: u8) -> Result<()> {
 
 /// Orchestrator: patch settings.json with RTK hook
 /// Handles reading, checking, prompting, merging, backing up, and atomic writing
-fn patch_settings_json(hook_path: &Path, mode: PatchMode, verbose: u8) -> Result<PatchResult> {
+fn patch_settings_json(
+    hook_path: &Path,
+    mode: PatchMode,
+    verbose: u8,
+    include_opencode: bool,
+) -> Result<PatchResult> {
     let claude_dir = resolve_claude_dir()?;
     let settings_path = claude_dir.join("settings.json");
     let hook_command = hook_path
@@ -501,12 +576,12 @@ fn patch_settings_json(hook_path: &Path, mode: PatchMode, verbose: u8) -> Result
     // Handle mode
     match mode {
         PatchMode::Skip => {
-            print_manual_instructions(hook_path);
+            print_manual_instructions(hook_path, include_opencode);
             return Ok(PatchResult::Skipped);
         }
         PatchMode::Ask => {
             if !prompt_user_consent(&settings_path)? {
-                print_manual_instructions(hook_path);
+                print_manual_instructions(hook_path, include_opencode);
                 return Ok(PatchResult::Declined);
             }
         }
@@ -540,7 +615,11 @@ fn patch_settings_json(hook_path: &Path, mode: PatchMode, verbose: u8) -> Result
             settings_path.with_extension("json.bak").display()
         );
     }
-    println!("  Restart Claude Code. Test with: git status");
+    if include_opencode {
+        println!("  Restart Claude Code and OpenCode. Test with: git status");
+    } else {
+        println!("  Restart Claude Code. Test with: git status");
+    }
 
     Ok(PatchResult::Patched)
 }
@@ -640,18 +719,30 @@ fn hook_already_present(root: &serde_json::Value, hook_command: &str) -> bool {
 
 /// Default mode: hook + slim RTK.md + @RTK.md reference
 #[cfg(not(unix))]
-fn run_default_mode(_global: bool, _patch_mode: PatchMode, _verbose: u8) -> Result<()> {
+fn run_default_mode(
+    _global: bool,
+    _patch_mode: PatchMode,
+    _verbose: u8,
+    _install_opencode: bool,
+) -> Result<()> {
     eprintln!("⚠️  Hook-based mode requires Unix (macOS/Linux).");
     eprintln!("    Windows: use --claude-md mode for full injection.");
     eprintln!("    Falling back to --claude-md mode.");
-    run_claude_md_mode(_global, _verbose)
+    run_claude_md_mode(_global, _verbose, _install_opencode)
 }
 
 #[cfg(unix)]
-fn run_default_mode(global: bool, patch_mode: PatchMode, verbose: u8) -> Result<()> {
+fn run_default_mode(
+    global: bool,
+    patch_mode: PatchMode,
+    verbose: u8,
+    install_opencode: bool,
+) -> Result<()> {
     if !global {
-        // Local init: unchanged behavior (full injection into ./CLAUDE.md)
-        return run_claude_md_mode(false, verbose);
+        // Local init: inject CLAUDE.md + generate project-local filters template
+        run_claude_md_mode(false, verbose, install_opencode)?;
+        generate_project_filters_template(verbose)?;
+        return Ok(());
     }
 
     let claude_dir = resolve_claude_dir()?;
@@ -660,18 +751,34 @@ fn run_default_mode(global: bool, patch_mode: PatchMode, verbose: u8) -> Result<
 
     // 1. Prepare hook directory and install hook
     let (_hook_dir, hook_path) = prepare_hook_paths()?;
-    ensure_hook_installed(&hook_path, verbose)?;
+    let hook_changed = ensure_hook_installed(&hook_path, verbose)?;
 
     // 2. Write RTK.md
     write_if_changed(&rtk_md_path, RTK_SLIM, "RTK.md", verbose)?;
+
+    let opencode_plugin_path = if install_opencode {
+        let path = prepare_opencode_plugin_path()?;
+        ensure_opencode_plugin_installed(&path, verbose)?;
+        Some(path)
+    } else {
+        None
+    };
 
     // 3. Patch CLAUDE.md (add @RTK.md, migrate if needed)
     let migrated = patch_claude_md(&claude_md_path, verbose)?;
 
     // 4. Print success message
-    println!("\nRTK hook installed (global).\n");
+    let hook_status = if hook_changed {
+        "installed/updated"
+    } else {
+        "already up to date"
+    };
+    println!("\nRTK hook {} (global).\n", hook_status);
     println!("  Hook:      {}", hook_path.display());
     println!("  RTK.md:    {} (10 lines)", rtk_md_path.display());
+    if let Some(path) = &opencode_plugin_path {
+        println!("  OpenCode:  {}", path.display());
+    }
     println!("  CLAUDE.md: @RTK.md reference added");
 
     if migrated {
@@ -680,7 +787,7 @@ fn run_default_mode(global: bool, patch_mode: PatchMode, verbose: u8) -> Result<
     }
 
     // 5. Patch settings.json
-    let patch_result = patch_settings_json(&hook_path, patch_mode, verbose)?;
+    let patch_result = patch_settings_json(&hook_path, patch_mode, verbose, install_opencode)?;
 
     // Report result
     match patch_result {
@@ -689,26 +796,92 @@ fn run_default_mode(global: bool, patch_mode: PatchMode, verbose: u8) -> Result<
         }
         PatchResult::AlreadyPresent => {
             println!("\n  settings.json: hook already present");
-            println!("  Restart Claude Code. Test with: git status");
+            if install_opencode {
+                println!("  Restart Claude Code and OpenCode. Test with: git status");
+            } else {
+                println!("  Restart Claude Code. Test with: git status");
+            }
         }
         PatchResult::Declined | PatchResult::Skipped => {
             // Manual instructions already printed by patch_settings_json
         }
     }
 
+    // 6. Generate user-global filters template (~/.config/rtk/filters.toml)
+    generate_global_filters_template(verbose)?;
+
     println!(); // Final newline
 
     Ok(())
 }
 
+/// Generate .rtk/filters.toml template in the current directory if not present.
+fn generate_project_filters_template(verbose: u8) -> Result<()> {
+    let rtk_dir = std::path::Path::new(".rtk");
+    let path = rtk_dir.join("filters.toml");
+
+    if path.exists() {
+        if verbose > 0 {
+            eprintln!(".rtk/filters.toml already exists, skipping template");
+        }
+        return Ok(());
+    }
+
+    fs::create_dir_all(rtk_dir)
+        .with_context(|| format!("Failed to create directory: {}", rtk_dir.display()))?;
+    fs::write(&path, FILTERS_TEMPLATE)
+        .with_context(|| format!("Failed to write {}", path.display()))?;
+
+    println!(
+        "  filters:   {} (template, edit to add project filters)",
+        path.display()
+    );
+    Ok(())
+}
+
+/// Generate ~/.config/rtk/filters.toml template if not present.
+fn generate_global_filters_template(verbose: u8) -> Result<()> {
+    let config_dir = dirs::config_dir().unwrap_or_else(|| std::path::PathBuf::from(".config"));
+    let rtk_dir = config_dir.join("rtk");
+    let path = rtk_dir.join("filters.toml");
+
+    if path.exists() {
+        if verbose > 0 {
+            eprintln!("{} already exists, skipping template", path.display());
+        }
+        return Ok(());
+    }
+
+    fs::create_dir_all(&rtk_dir)
+        .with_context(|| format!("Failed to create directory: {}", rtk_dir.display()))?;
+    fs::write(&path, FILTERS_GLOBAL_TEMPLATE)
+        .with_context(|| format!("Failed to write {}", path.display()))?;
+
+    println!(
+        "  filters:   {} (template, edit to add user-global filters)",
+        path.display()
+    );
+    Ok(())
+}
+
 /// Hook-only mode: just the hook, no RTK.md
 #[cfg(not(unix))]
-fn run_hook_only_mode(_global: bool, _patch_mode: PatchMode, _verbose: u8) -> Result<()> {
+fn run_hook_only_mode(
+    _global: bool,
+    _patch_mode: PatchMode,
+    _verbose: u8,
+    _install_opencode: bool,
+) -> Result<()> {
     anyhow::bail!("Hook install requires Unix (macOS/Linux). Use WSL or --claude-md mode.")
 }
 
 #[cfg(unix)]
-fn run_hook_only_mode(global: bool, patch_mode: PatchMode, verbose: u8) -> Result<()> {
+fn run_hook_only_mode(
+    global: bool,
+    patch_mode: PatchMode,
+    verbose: u8,
+    install_opencode: bool,
+) -> Result<()> {
     if !global {
         eprintln!("⚠️  Warning: --hook-only only makes sense with --global");
         eprintln!("    For local projects, use default mode or --claude-md");
@@ -717,16 +890,32 @@ fn run_hook_only_mode(global: bool, patch_mode: PatchMode, verbose: u8) -> Resul
 
     // Prepare and install hook
     let (_hook_dir, hook_path) = prepare_hook_paths()?;
-    ensure_hook_installed(&hook_path, verbose)?;
+    let hook_changed = ensure_hook_installed(&hook_path, verbose)?;
 
-    println!("\nRTK hook installed (hook-only mode).\n");
+    let opencode_plugin_path = if install_opencode {
+        let path = prepare_opencode_plugin_path()?;
+        ensure_opencode_plugin_installed(&path, verbose)?;
+        Some(path)
+    } else {
+        None
+    };
+
+    let hook_status = if hook_changed {
+        "installed/updated"
+    } else {
+        "already up to date"
+    };
+    println!("\nRTK hook {} (hook-only mode).\n", hook_status);
     println!("  Hook: {}", hook_path.display());
+    if let Some(path) = &opencode_plugin_path {
+        println!("  OpenCode: {}", path.display());
+    }
     println!(
         "  Note: No RTK.md created. Claude won't know about meta commands (gain, discover, proxy)."
     );
 
     // Patch settings.json
-    let patch_result = patch_settings_json(&hook_path, patch_mode, verbose)?;
+    let patch_result = patch_settings_json(&hook_path, patch_mode, verbose, install_opencode)?;
 
     // Report result
     match patch_result {
@@ -735,7 +924,11 @@ fn run_hook_only_mode(global: bool, patch_mode: PatchMode, verbose: u8) -> Resul
         }
         PatchResult::AlreadyPresent => {
             println!("\n  settings.json: hook already present");
-            println!("  Restart Claude Code. Test with: git status");
+            if install_opencode {
+                println!("  Restart Claude Code and OpenCode. Test with: git status");
+            } else {
+                println!("  Restart Claude Code. Test with: git status");
+            }
         }
         PatchResult::Declined | PatchResult::Skipped => {
             // Manual instructions already printed by patch_settings_json
@@ -748,7 +941,7 @@ fn run_hook_only_mode(global: bool, patch_mode: PatchMode, verbose: u8) -> Resul
 }
 
 /// Legacy mode: full 137-line injection into CLAUDE.md
-fn run_claude_md_mode(global: bool, verbose: u8) -> Result<()> {
+fn run_claude_md_mode(global: bool, verbose: u8, install_opencode: bool) -> Result<()> {
     let path = if global {
         resolve_claude_dir()?.join("CLAUDE.md")
     } else {
@@ -815,6 +1008,14 @@ fn run_claude_md_mode(global: bool, verbose: u8) -> Result<()> {
     }
 
     if global {
+        if install_opencode {
+            let opencode_plugin_path = prepare_opencode_plugin_path()?;
+            ensure_opencode_plugin_installed(&opencode_plugin_path, verbose)?;
+            println!(
+                "✅ OpenCode plugin installed: {}",
+                opencode_plugin_path.display()
+            );
+        }
         println!("   Claude Code will now use rtk in all sessions");
     } else {
         println!("   Claude Code will use rtk in this project");
@@ -980,6 +1181,58 @@ fn resolve_claude_dir() -> Result<PathBuf> {
         .context("Cannot determine home directory. Is $HOME set?")
 }
 
+/// Resolve OpenCode config directory (~/.config/opencode)
+/// OpenCode uses ~/.config/opencode on all platforms (XDG convention),
+/// NOT the macOS-native ~/Library/Application Support/.
+fn resolve_opencode_dir() -> Result<PathBuf> {
+    dirs::home_dir()
+        .map(|h| h.join(".config").join("opencode"))
+        .context("Cannot determine home directory. Is $HOME set?")
+}
+
+/// Return OpenCode plugin path: ~/.config/opencode/plugins/rtk.ts
+fn opencode_plugin_path(opencode_dir: &Path) -> PathBuf {
+    opencode_dir.join("plugins").join("rtk.ts")
+}
+
+/// Prepare OpenCode plugin directory and return install path
+fn prepare_opencode_plugin_path() -> Result<PathBuf> {
+    let opencode_dir = resolve_opencode_dir()?;
+    let path = opencode_plugin_path(&opencode_dir);
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).with_context(|| {
+            format!(
+                "Failed to create OpenCode plugin directory: {}",
+                parent.display()
+            )
+        })?;
+    }
+    Ok(path)
+}
+
+/// Write OpenCode plugin file if missing or outdated
+fn ensure_opencode_plugin_installed(path: &Path, verbose: u8) -> Result<bool> {
+    write_if_changed(path, OPENCODE_PLUGIN, "OpenCode plugin", verbose)
+}
+
+/// Remove OpenCode plugin file
+fn remove_opencode_plugin(verbose: u8) -> Result<Vec<PathBuf>> {
+    let opencode_dir = resolve_opencode_dir()?;
+    let path = opencode_plugin_path(&opencode_dir);
+    let mut removed = Vec::new();
+
+    if path.exists() {
+        fs::remove_file(&path)
+            .with_context(|| format!("Failed to remove OpenCode plugin: {}", path.display()))?;
+        if verbose > 0 {
+            eprintln!("Removed OpenCode plugin: {}", path.display());
+        }
+        removed.push(path);
+    }
+
+    Ok(removed)
+}
+
 /// Show current rtk configuration
 pub fn show_config() -> Result<()> {
     let claude_dir = resolve_claude_dir()?;
@@ -1002,13 +1255,27 @@ pub fn show_config() -> Result<()> {
             let hook_content = fs::read_to_string(&hook_path)?;
             let has_guards =
                 hook_content.contains("command -v rtk") && hook_content.contains("command -v jq");
+            let is_thin_delegator = hook_content.contains("rtk rewrite");
+            let hook_version = crate::hook_check::parse_hook_version(&hook_content);
 
-            if is_executable && has_guards {
-                println!("✅ Hook: {} (executable, with guards)", hook_path.display());
-            } else if !is_executable {
+            if !is_executable {
                 println!(
                     "⚠️  Hook: {} (NOT executable - run: chmod +x)",
                     hook_path.display()
+                );
+            } else if !is_thin_delegator {
+                println!(
+                    "⚠️  Hook: {} (outdated — inline logic, not thin delegator)",
+                    hook_path.display()
+                );
+                println!(
+                    "   → Run `rtk init --global` to upgrade to the single source of truth hook"
+                );
+            } else if is_executable && has_guards {
+                println!(
+                    "✅ Hook: {} (thin delegator, version {})",
+                    hook_path.display(),
+                    hook_version
                 );
             } else {
                 println!("⚠️  Hook: {} (no guards - outdated)", hook_path.display());
@@ -1028,6 +1295,26 @@ pub fn show_config() -> Result<()> {
         println!("✅ RTK.md: {} (slim mode)", rtk_md_path.display());
     } else {
         println!("⚪ RTK.md: not found");
+    }
+
+    // Check hook integrity
+    match integrity::verify_hook_at(&hook_path) {
+        Ok(integrity::IntegrityStatus::Verified) => {
+            println!("✅ Integrity: hook hash verified");
+        }
+        Ok(integrity::IntegrityStatus::Tampered { .. }) => {
+            println!("❌ Integrity: hook modified outside rtk init (run: rtk verify)");
+        }
+        Ok(integrity::IntegrityStatus::NoBaseline) => {
+            println!("⚠️  Integrity: no baseline hash (run: rtk init -g to establish)");
+        }
+        Ok(integrity::IntegrityStatus::NotInstalled)
+        | Ok(integrity::IntegrityStatus::OrphanedHash) => {
+            // Don't show integrity line if hook isn't installed
+        }
+        Err(_) => {
+            println!("⚠️  Integrity: check failed");
+        }
     }
 
     // Check global CLAUDE.md
@@ -1081,6 +1368,18 @@ pub fn show_config() -> Result<()> {
         println!("⚪ settings.json: not found");
     }
 
+    // Check OpenCode plugin
+    if let Ok(opencode_dir) = resolve_opencode_dir() {
+        let plugin = opencode_plugin_path(&opencode_dir);
+        if plugin.exists() {
+            println!("✅ OpenCode: plugin installed ({})", plugin.display());
+        } else {
+            println!("⚪ OpenCode: plugin not found");
+        }
+    } else {
+        println!("⚪ OpenCode: config dir not found");
+    }
+
     println!("\nUsage:");
     println!("  rtk init              # Full injection into local CLAUDE.md");
     println!("  rtk init -g           # Hook + RTK.md + @RTK.md + settings.json (recommended)");
@@ -1089,13 +1388,24 @@ pub fn show_config() -> Result<()> {
     println!("  rtk init -g --uninstall     # Remove all RTK artifacts");
     println!("  rtk init -g --claude-md     # Legacy: full injection into ~/.claude/CLAUDE.md");
     println!("  rtk init -g --hook-only     # Hook only, no RTK.md");
+    println!("  rtk init -g --opencode      # OpenCode plugin only");
 
+    Ok(())
+}
+
+fn run_opencode_only_mode(verbose: u8) -> Result<()> {
+    let opencode_plugin_path = prepare_opencode_plugin_path()?;
+    ensure_opencode_plugin_installed(&opencode_plugin_path, verbose)?;
+    println!("\nOpenCode plugin installed (global).\n");
+    println!("  OpenCode: {}", opencode_plugin_path.display());
+    println!("  Restart OpenCode. Test with: git status\n");
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::Path;
     use tempfile::TempDir;
 
     #[test]
@@ -1136,12 +1446,13 @@ mod tests {
     fn test_hook_has_guards() {
         assert!(REWRITE_HOOK.contains("command -v rtk"));
         assert!(REWRITE_HOOK.contains("command -v jq"));
-        // Guards must be BEFORE set -euo pipefail
-        let guard_pos = REWRITE_HOOK.find("command -v rtk").unwrap();
-        let set_pos = REWRITE_HOOK.find("set -euo pipefail").unwrap();
+        // Guards (rtk/jq availability checks) must appear before the actual delegation call.
+        // The thin delegating hook no longer uses set -euo pipefail.
+        let jq_pos = REWRITE_HOOK.find("command -v jq").unwrap();
+        let rtk_delegate_pos = REWRITE_HOOK.find("rtk rewrite \"$CMD\"").unwrap();
         assert!(
-            guard_pos < set_pos,
-            "Guards must come before set -euo pipefail"
+            jq_pos < rtk_delegate_pos,
+            "Guards must appear before rtk rewrite delegation"
         );
     }
 
@@ -1160,6 +1471,40 @@ More content"#;
         assert!(!result.contains("OLD RTK STUFF"));
         assert!(result.contains("# My Config"));
         assert!(result.contains("More content"));
+    }
+
+    #[test]
+    fn test_opencode_plugin_install_and_update() {
+        let temp = TempDir::new().unwrap();
+        let opencode_dir = temp.path().join("opencode");
+        let plugin_path = opencode_plugin_path(&opencode_dir);
+
+        fs::create_dir_all(plugin_path.parent().unwrap()).unwrap();
+        assert!(!plugin_path.exists());
+
+        let changed = ensure_opencode_plugin_installed(&plugin_path, 0).unwrap();
+        assert!(changed);
+        let content = fs::read_to_string(&plugin_path).unwrap();
+        assert_eq!(content, OPENCODE_PLUGIN);
+
+        fs::write(&plugin_path, "// old").unwrap();
+        let changed_again = ensure_opencode_plugin_installed(&plugin_path, 0).unwrap();
+        assert!(changed_again);
+        let content_updated = fs::read_to_string(&plugin_path).unwrap();
+        assert_eq!(content_updated, OPENCODE_PLUGIN);
+    }
+
+    #[test]
+    fn test_opencode_plugin_remove() {
+        let temp = TempDir::new().unwrap();
+        let opencode_dir = temp.path().join("opencode");
+        let plugin_path = opencode_plugin_path(&opencode_dir);
+        fs::create_dir_all(plugin_path.parent().unwrap()).unwrap();
+        fs::write(&plugin_path, OPENCODE_PLUGIN).unwrap();
+
+        assert!(plugin_path.exists());
+        fs::remove_file(&plugin_path).unwrap();
+        assert!(!plugin_path.exists());
     }
 
     #[test]

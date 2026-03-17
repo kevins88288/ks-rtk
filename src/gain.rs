@@ -1,12 +1,15 @@
 use crate::display_helpers::{format_duration, print_period_table};
+use crate::hook_check;
 use crate::tracking::{DayStats, MonthStats, Tracker, WeekStats};
 use crate::utils::format_tokens;
 use anyhow::{Context, Result};
-use colored::Colorize; // added: terminal colors
+use colored::Colorize;
 use serde::Serialize;
-use std::io::IsTerminal; // added: TTY detection for graceful degradation
+use std::io::IsTerminal;
+use std::path::PathBuf;
 
 pub fn run(
+    project: bool, // added: per-project scope flag
     graph: bool,
     history: bool,
     quota: bool,
@@ -16,19 +19,43 @@ pub fn run(
     monthly: bool,
     all: bool,
     format: &str,
+    failures: bool,
     _verbose: u8,
 ) -> Result<()> {
     let tracker = Tracker::new().context("Failed to initialize tracking database")?;
+    let project_scope = resolve_project_scope(project)?; // added: resolve project path
+
+    if failures {
+        return show_failures(&tracker);
+    }
 
     // Handle export formats
     match format {
-        "json" => return export_json(&tracker, daily, weekly, monthly, all),
-        "csv" => return export_csv(&tracker, daily, weekly, monthly, all),
+        "json" => {
+            return export_json(
+                &tracker,
+                daily,
+                weekly,
+                monthly,
+                all,
+                project_scope.as_deref(), // added: pass project scope
+            );
+        }
+        "csv" => {
+            return export_csv(
+                &tracker,
+                daily,
+                weekly,
+                monthly,
+                all,
+                project_scope.as_deref(), // added: pass project scope
+            );
+        }
         _ => {} // Continue with text format
     }
 
     let summary = tracker
-        .get_summary()
+        .get_summary_filtered(project_scope.as_deref()) // changed: use filtered variant
         .context("Failed to load token savings summary from database")?;
 
     if summary.total_commands == 0 {
@@ -39,9 +66,18 @@ pub fn run(
 
     // Default view (summary)
     if !daily && !weekly && !monthly && !all {
-        // added: styled header with bold title
-        println!("{}", styled("RTK Token Savings (Global Scope)", true));
+        // added: scope-aware styled header // changed: merged upstream styled + project scope
+        let title = if project_scope.is_some() {
+            "RTK Token Savings (Project Scope)"
+        } else {
+            "RTK Token Savings (Global Scope)"
+        };
+        println!("{}", styled(title, true));
         println!("{}", "═".repeat(60));
+        // added: show project path when scoped
+        if let Some(ref scope) = project_scope {
+            println!("Scope: {}", shorten_path(scope));
+        }
         println!();
 
         // added: KPI-style aligned output
@@ -64,8 +100,34 @@ pub fn run(
                 format_duration(summary.avg_time_ms)
             ),
         );
-        print_efficiency_meter(summary.avg_savings_pct); // added: visual meter
+        print_efficiency_meter(summary.avg_savings_pct);
         println!();
+
+        // Warn about hook issues that silently kill savings (stderr, not stdout)
+        match hook_check::status() {
+            hook_check::HookStatus::Missing => {
+                eprintln!(
+                    "{}",
+                    "⚠️  No hook installed — run `rtk init -g` for automatic token savings"
+                        .yellow()
+                );
+                eprintln!();
+            }
+            hook_check::HookStatus::Outdated => {
+                eprintln!(
+                    "{}",
+                    "⚠️  Hook outdated — run `rtk init -g` to update".yellow()
+                );
+                eprintln!();
+            }
+            hook_check::HookStatus::Ok => {}
+        }
+
+        // Lightweight RTK_DISABLED bypass check (best-effort, silent on failure)
+        if let Some(warning) = check_rtk_disabled_bypass() {
+            eprintln!("{}", warning.yellow());
+            eprintln!();
+        }
 
         if !summary.by_command.is_empty() {
             // added: styled section header
@@ -160,7 +222,7 @@ pub fn run(
         }
 
         if history {
-            let recent = tracker.get_recent(10)?;
+            let recent = tracker.get_recent_filtered(10, project_scope.as_deref())?; // changed: filtered
             if !recent.is_empty() {
                 println!("{}", styled("Recent Commands", true)); // added: styled header
                 println!("──────────────────────────────────────────────────────────");
@@ -218,33 +280,20 @@ pub fn run(
             println!("      Actual limits use rolling 5-hour windows, not monthly caps.");
         }
 
-        // Show fork feature stats if any exist
-        if let Ok(fork_stats) = tracker.get_fork_stats() {
-            if !fork_stats.is_empty() {
-                println!("\n{}Fork Features (ks-rtk):{}", "\x1b[1m", "\x1b[0m");
-                for (tag, count, saved, avg_pct) in &fork_stats {
-                    println!(
-                        "  {:<20} {:>5} cmds  {:>10} tokens saved  avg {:.1}%",
-                        tag, count, saved, avg_pct
-                    );
-                }
-            }
-        }
-
         return Ok(());
     }
 
     // Time breakdown views
     if all || daily {
-        print_daily_full(&tracker)?;
+        print_daily_full(&tracker, project_scope.as_deref())?; // changed: pass project scope
     }
 
     if all || weekly {
-        print_weekly(&tracker)?;
+        print_weekly(&tracker, project_scope.as_deref())?; // changed: pass project scope
     }
 
     if all || monthly {
-        print_monthly(&tracker)?;
+        print_monthly(&tracker, project_scope.as_deref())?; // changed: pass project scope
     }
 
     Ok(())
@@ -344,6 +393,39 @@ fn print_efficiency_meter(pct: f64) {
     }
 }
 
+/// Resolve project scope from --project flag. // added
+fn resolve_project_scope(project: bool) -> Result<Option<String>> {
+    if !project {
+        return Ok(None);
+    }
+    let cwd = std::env::current_dir().context("Failed to resolve current working directory")?;
+    let canonical = cwd.canonicalize().unwrap_or(cwd);
+    Ok(Some(canonical.to_string_lossy().to_string()))
+}
+
+/// Shorten long absolute paths for display. // added
+fn shorten_path(path: &str) -> String {
+    let path_buf = PathBuf::from(path);
+    let comps: Vec<String> = path_buf
+        .components()
+        .map(|c| c.as_os_str().to_string_lossy().to_string())
+        .collect();
+    if comps.len() <= 4 {
+        return path.to_string();
+    }
+    let root = comps[0].as_str();
+    if root == "/" || root.is_empty() {
+        format!("/.../{}/{}", comps[comps.len() - 2], comps[comps.len() - 1])
+    } else {
+        format!(
+            "{}/.../{}/{}",
+            root,
+            comps[comps.len() - 2],
+            comps[comps.len() - 1]
+        )
+    }
+}
+
 fn print_ascii_graph(data: &[(String, usize)]) {
     if data.is_empty() {
         return;
@@ -374,20 +456,23 @@ fn print_ascii_graph(data: &[(String, usize)]) {
     }
 }
 
-fn print_daily_full(tracker: &Tracker) -> Result<()> {
-    let days = tracker.get_all_days()?;
+fn print_daily_full(tracker: &Tracker, project_scope: Option<&str>) -> Result<()> {
+    // changed: add project scope
+    let days = tracker.get_all_days_filtered(project_scope)?; // changed: use filtered variant
     print_period_table(&days);
     Ok(())
 }
 
-fn print_weekly(tracker: &Tracker) -> Result<()> {
-    let weeks = tracker.get_by_week()?;
+fn print_weekly(tracker: &Tracker, project_scope: Option<&str>) -> Result<()> {
+    // changed: add project scope
+    let weeks = tracker.get_by_week_filtered(project_scope)?; // changed: use filtered variant
     print_period_table(&weeks);
     Ok(())
 }
 
-fn print_monthly(tracker: &Tracker) -> Result<()> {
-    let months = tracker.get_by_month()?;
+fn print_monthly(tracker: &Tracker, project_scope: Option<&str>) -> Result<()> {
+    // changed: add project scope
+    let months = tracker.get_by_month_filtered(project_scope)?; // changed: use filtered variant
     print_period_table(&months);
     Ok(())
 }
@@ -420,9 +505,10 @@ fn export_json(
     weekly: bool,
     monthly: bool,
     all: bool,
+    project_scope: Option<&str>, // added: project scope
 ) -> Result<()> {
     let summary = tracker
-        .get_summary()
+        .get_summary_filtered(project_scope) // changed: use filtered variant
         .context("Failed to load token savings summary from database")?;
 
     let export = ExportData {
@@ -436,17 +522,17 @@ fn export_json(
             avg_time_ms: summary.avg_time_ms,
         },
         daily: if all || daily {
-            Some(tracker.get_all_days()?)
+            Some(tracker.get_all_days_filtered(project_scope)?) // changed: use filtered
         } else {
             None
         },
         weekly: if all || weekly {
-            Some(tracker.get_by_week()?)
+            Some(tracker.get_by_week_filtered(project_scope)?) // changed: use filtered
         } else {
             None
         },
         monthly: if all || monthly {
-            Some(tracker.get_by_month()?)
+            Some(tracker.get_by_month_filtered(project_scope)?) // changed: use filtered
         } else {
             None
         },
@@ -464,9 +550,10 @@ fn export_csv(
     weekly: bool,
     monthly: bool,
     all: bool,
+    project_scope: Option<&str>, // added: project scope
 ) -> Result<()> {
     if all || daily {
-        let days = tracker.get_all_days()?;
+        let days = tracker.get_all_days_filtered(project_scope)?; // changed: use filtered
         println!("# Daily Data");
         println!("date,commands,input_tokens,output_tokens,saved_tokens,savings_pct,total_time_ms,avg_time_ms");
         for day in days {
@@ -486,7 +573,7 @@ fn export_csv(
     }
 
     if all || weekly {
-        let weeks = tracker.get_by_week()?;
+        let weeks = tracker.get_by_week_filtered(project_scope)?; // changed: use filtered
         println!("# Weekly Data");
         println!(
             "week_start,week_end,commands,input_tokens,output_tokens,saved_tokens,savings_pct,total_time_ms,avg_time_ms"
@@ -509,7 +596,7 @@ fn export_csv(
     }
 
     if all || monthly {
-        let months = tracker.get_by_month()?;
+        let months = tracker.get_by_month_filtered(project_scope)?; // changed: use filtered
         println!("# Monthly Data");
         println!("month,commands,input_tokens,output_tokens,saved_tokens,savings_pct,total_time_ms,avg_time_ms");
         for month in months {
@@ -525,6 +612,111 @@ fn export_csv(
                 month.avg_time_ms
             );
         }
+    }
+
+    Ok(())
+}
+
+/// Lightweight scan of recent Claude Code sessions for RTK_DISABLED= overuse.
+/// Returns a warning string if bypass rate exceeds 10%, None otherwise.
+/// Silently returns None on any error (missing dirs, permission issues, etc.).
+fn check_rtk_disabled_bypass() -> Option<String> {
+    use crate::discover::provider::{ClaudeProvider, SessionProvider};
+    use crate::discover::registry::has_rtk_disabled_prefix;
+
+    let provider = ClaudeProvider;
+
+    // Quick scan: last 7 days only
+    let sessions = provider.discover_sessions(None, Some(7)).ok()?;
+
+    // Early bail if no sessions or too many (avoid slow scan)
+    if sessions.is_empty() || sessions.len() > 200 {
+        return None;
+    }
+
+    let mut total_bash: usize = 0;
+    let mut bypassed: usize = 0;
+
+    for session_path in &sessions {
+        let extracted = match provider.extract_commands(session_path) {
+            Ok(cmds) => cmds,
+            Err(_) => continue,
+        };
+
+        for ext_cmd in &extracted {
+            total_bash += 1;
+            if has_rtk_disabled_prefix(&ext_cmd.command) {
+                bypassed += 1;
+            }
+        }
+    }
+
+    if total_bash == 0 {
+        return None;
+    }
+
+    let pct = (bypassed as f64 / total_bash as f64) * 100.0;
+    if pct > 10.0 {
+        Some(format!(
+            "⚠️  {} commands ({:.0}%) used RTK_DISABLED=1 unnecessarily — run `rtk discover` for details",
+            bypassed, pct
+        ))
+    } else {
+        None
+    }
+}
+
+fn show_failures(tracker: &Tracker) -> Result<()> {
+    let summary = tracker
+        .get_parse_failure_summary()
+        .context("Failed to load parse failure data")?;
+
+    if summary.total == 0 {
+        println!("No parse failures recorded.");
+        println!("This means all commands parsed successfully (or fallback hasn't triggered yet).");
+        return Ok(());
+    }
+
+    println!("{}", styled("RTK Parse Failures", true));
+    println!("{}", "═".repeat(60));
+    println!();
+
+    print_kpi("Total failures", summary.total.to_string());
+    print_kpi("Recovery rate", format!("{:.1}%", summary.recovery_rate));
+    println!();
+
+    if !summary.top_commands.is_empty() {
+        println!("{}", styled("Top Commands (by frequency)", true));
+        println!("{}", "─".repeat(60));
+        for (cmd, count) in &summary.top_commands {
+            let cmd_display = if cmd.len() > 50 {
+                format!("{}...", &cmd[..47])
+            } else {
+                cmd.clone()
+            };
+            println!("  {:>4}x  {}", count, cmd_display);
+        }
+        println!();
+    }
+
+    if !summary.recent.is_empty() {
+        println!("{}", styled("Recent Failures (last 10)", true));
+        println!("{}", "─".repeat(60));
+        for rec in &summary.recent {
+            let ts_short = if rec.timestamp.len() >= 16 {
+                &rec.timestamp[..16]
+            } else {
+                &rec.timestamp
+            };
+            let status = if rec.fallback_succeeded { "ok" } else { "FAIL" };
+            let cmd_display = if rec.raw_command.len() > 40 {
+                format!("{}...", &rec.raw_command[..37])
+            } else {
+                rec.raw_command.clone()
+            };
+            println!("  {} [{}] {}", ts_short, status, cmd_display);
+        }
+        println!();
     }
 
     Ok(())

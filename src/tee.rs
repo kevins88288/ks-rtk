@@ -135,8 +135,7 @@ fn write_tee_file(
         let truncated = truncate_utf8(raw, max_file_size);
         format!(
             "{}\n\n--- truncated at {} bytes ---",
-            truncated,
-            max_file_size
+            truncated, max_file_size
         )
     } else {
         raw.to_string()
@@ -337,7 +336,7 @@ mod tests {
     fn test_write_tee_file_truncation_utf8_boundary() {
         let tmpdir = tempfile::tempdir().unwrap();
         let big_output = "é".repeat(800); // 1600 bytes
-        // 1001 splits a UTF-8 code point if slicing by byte index directly.
+                                          // 1001 splits a UTF-8 code point if slicing by byte index directly.
         let result = write_tee_file(&big_output, "test", tmpdir.path(), 1001, 20);
         assert!(result.is_some());
 
@@ -414,6 +413,38 @@ directory = "/tmp/rtk-tee"
         let deserialized: TeeConfig = toml::from_str(&serialized).unwrap();
         assert_eq!(deserialized.mode, TeeMode::Always);
         assert_eq!(deserialized.max_files, 10);
+    }
+
+    #[test]
+    fn test_truncation_respects_utf8_boundaries() {
+        // Create a string with multi-byte characters (emoji = 4 bytes each)
+        let emoji_str = "🎉".repeat(300); // 1200 bytes of 4-byte chars
+                                          // Truncating at a non-boundary should still produce valid UTF-8
+        let truncated = truncate_utf8(&emoji_str, 500);
+        // Should be valid UTF-8
+        assert!(std::str::from_utf8(truncated.as_bytes()).is_ok());
+        // Should be <= 500 bytes
+        assert!(truncated.len() <= 500);
+        // Should end on a char boundary (complete emoji, 4 bytes each)
+        assert!(truncated.len() % 4 == 0);
+    }
+
+    #[test]
+    fn test_truncate_utf8_exact_boundary() {
+        // 2-byte chars: 'é' (U+00E9)
+        let s = "é".repeat(100); // 200 bytes exactly
+                                 // Slicing at 199 would split a 2-byte char — must be rounded down to 198
+        let truncated = truncate_utf8(&s, 199);
+        assert!(std::str::from_utf8(truncated.as_bytes()).is_ok());
+        assert!(truncated.len() <= 199);
+        assert_eq!(truncated.len(), 198); // rounded down to nearest 2-byte boundary
+    }
+
+    #[test]
+    fn test_truncate_utf8_no_truncation_needed() {
+        let s = "hello world";
+        let truncated = truncate_utf8(s, 1000);
+        assert_eq!(truncated, s);
     }
 
     #[test]
