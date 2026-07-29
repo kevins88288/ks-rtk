@@ -230,8 +230,8 @@ assert_help    "rtk cargo"                    rtk cargo
 
 section "Curl (new)"
 
-assert_contains "rtk curl JSON detect" "string" rtk curl https://httpbin.org/json
-assert_ok       "rtk curl plain text"          rtk curl https://httpbin.org/robots.txt
+assert_contains "rtk curl JSON detect" "string" rtk curl https://mockhttp.org/json
+assert_ok       "rtk curl plain text"          rtk curl https://mockhttp.org/robots.txt
 assert_help     "rtk curl"                     rtk curl
 
 # ── 8. Npm / Npx ────────────────────────────────────
@@ -351,7 +351,7 @@ assert_ok      "rtk init --show"              rtk init --show
 section "Wget"
 
 if command -v wget >/dev/null 2>&1; then
-    assert_ok  "rtk wget stdout"              rtk wget https://httpbin.org/robots.txt -O
+    assert_ok  "rtk wget stdout"              rtk wget https://mockhttp.org/robots.txt -O
 else
     skip_test "rtk wget" "wget not installed"
 fi
@@ -437,20 +437,42 @@ else
     skip_test "rtk gt" "gt not installed"
 fi
 
-# ── 30. Global flags ────────────────────────────────
+# ── 30. Ruby (conditional) ──────────────────────────
+
+section "Ruby (conditional)"
+
+if command -v rspec &>/dev/null; then
+    assert_help    "rtk rspec"                     rtk rspec --help
+else
+    skip_test "rtk rspec" "rspec not installed"
+fi
+
+if command -v rubocop &>/dev/null; then
+    assert_help    "rtk rubocop"                   rtk rubocop --help
+else
+    skip_test "rtk rubocop" "rubocop not installed"
+fi
+
+if command -v rake &>/dev/null; then
+    assert_help    "rtk rake"                      rtk rake --help
+else
+    skip_test "rtk rake" "rake not installed"
+fi
+
+# ── 31. Global flags ────────────────────────────────
 
 section "Global flags"
 
 assert_ok      "rtk -u ls ."                  rtk -u ls .
 assert_ok      "rtk --skip-env npm --help"    rtk --skip-env npm --help
 
-# ── 31. CcEconomics ─────────────────────────────────
+# ── 32. CcEconomics ─────────────────────────────────
 
 section "CcEconomics"
 
 assert_ok      "rtk cc-economics"             rtk cc-economics
 
-# ── 32. Learn ───────────────────────────────────────
+# ── 33. Learn ───────────────────────────────────────
 
 section "Learn"
 
@@ -505,7 +527,9 @@ assert_ok      "rtk discover"                 rtk discover
 
 section "Diff"
 
-assert_ok      "rtk diff two files"           rtk diff Cargo.toml LICENSE
+assert_ok       "rtk diff identical files"     rtk diff Cargo.toml Cargo.toml
+assert_fails    "rtk diff differing files"     rtk diff Cargo.toml LICENSE
+assert_contains "rtk diff shows changes"       "added" rtk diff Cargo.toml LICENSE
 
 # ── 37. Wc ────────────────────────────────────────────
 

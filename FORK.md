@@ -2,88 +2,101 @@
 
 ## Overview
 
-This is Kevin's fork of [rtk-ai/rtk](https://github.com/rtk-ai/rtk) (Rust Token Killer).
-We track upstream closely and layer our own improvements on feature branches.
+Kevin's fork of [rtk-ai/rtk](https://github.com/rtk-ai/rtk) (Rust Token Killer).
+We track upstream closely and keep the fork surface as small as possible: every
+sync, each fork patch is re-triaged and dropped the moment upstream solves the
+same problem.
 
 ## Upstream
 
 | Field | Value |
 |-------|-------|
 | **Upstream repo** | https://github.com/rtk-ai/rtk |
-| **Remote name** | `origin` (direct clone, not GitHub fork) |
-| **Last synced** | 2026-02-20 |
-| **Synced version** | 0.22.2 |
-
-## Sync Risks
-
-### Upstream CLAUDE.md Contains Author Personal Preferences
-
-**Risk**: When syncing upstream, the author's `CLAUDE.md` is pulled in verbatim. It contains
-personal workflow preferences including language settings (e.g., "Respond in French"). These
-override your own Claude behavior until caught.
-
-**What happened**: Syncing to v0.22.2 pulled in a French language preference that caused Claude
-to respond in French for multiple sessions.
-
-**After every upstream sync, always review and override:**
-- `Language & Communication` section — confirm English is set
-- Any personal style, tone, or communication preferences the upstream author added
-- Dev workflow assumptions that differ from this environment (paths, tools, OS)
-
-**Fix applied**: Commit `fd66cc9` — Language section in `CLAUDE.md` now says "English always"
-with English communication examples replacing the original French ones.
+| **Remote** | `upstream` → `rtk-ai/rtk`; `origin` → `kevins88288/ks-rtk` (our mirror) |
+| **Last synced** | 2026-07-29 |
+| **Synced version** | v0.44.1 (`upstream/master`) |
 
 ## Our Customizations
 
-### Phase 1: Foundation (merged to master)
-- FORK.md tracking doc (this file)
-- LLM-friendly empty result messages (grep, find)
-- Clearer abbreviations (no emoji-heavy headers)
+The fork surface is deliberately tiny. Four patches survive as of v0.44.1:
 
-### Phase 2: Anti-Circumvention + Tracking (feat/phase2-tracking)
-- **fork_tag tracking**: `fork_tag TEXT` column in tracking DB for per-feature attribution
-- **track_tagged() API**: Fork-modified modules tag records with `ks:llm-friendly`, `ks:tee`, etc.
-- **Tee integration**: `tee_and_hint()` wired into `ls.rs`, `container.rs`, `grep_cmd.rs`
-- **Log truncation fix**: Error line truncation increased from 100→200 chars (fixes docker "Permission denied" cutoff)
-- **Fork stats in `rtk gain`**: Shows fork vs upstream savings breakdown
-- **`scripts/fork-stats.sh`**: SQL-based comparison script
+| Tag | Location | Purpose |
+|-----|----------|---------|
+| `ks:llm-friendly` | `src/cmds/system/search.rs`, `src/cmds/system/find_cmd.rs` | Explicit empty-result messages + spelled-out headers. Upstream `grep`/`find` print **nothing** on no-match; an LLM reads silence as a broken command and retries with unwrapped `grep`, discarding the token saving. |
+| `ks:playwright-reporter` | `src/cmds/js/playwright_cmd.rs` | Strips the split form `--reporter x`, not just `--reporter=x`. Upstream leaves `x` behind as a stray positional, which Playwright treats as a test-path filter and matches nothing. |
+| `ks:truncation-fix` | `src/cmds/system/log_cmd.rs` | Error-line truncation 100 → 200 chars. 100 cut the tail off common errors (docker `...: Permission denied`), hiding the cause. |
+| `ks:build-config` | `.cargo/config.toml` | `lto=off` for `x86_64-unknown-linux-gnu` container builds. Not upstreamable (environment-specific). |
 
-### Feature Tags
+## Sync Risks
 
-| Tag | Modules | Purpose |
-|-----|---------|---------|
-| `ks:llm-friendly` | grep_cmd.rs, find_cmd.rs | Natural language messages prevent LLM circumvention |
-| `ks:tee` | ls.rs, container.rs, grep_cmd.rs | Tee recovery hints for filtered output |
-| `ks:truncation-fix` | log_cmd.rs | Less aggressive error truncation |
-| `ks:grep-flag-strip` | hooks/rtk-rewrite.sh | Strips -r/-n/-l/-H/-h before rewriting to rtk grep (upstream Clap rejects them when passed before positional args) |
+### Upstream CLAUDE.md may contain author personal preferences
 
-### How to Check Fork Savings
+**Risk**: syncing pulls the upstream author's `CLAUDE.md` in verbatim. It has
+previously contained personal workflow preferences including a language setting
+("respond in French"), which overrode Claude's behavior for multiple sessions
+before it was caught.
 
-```bash
-# In rtk gain output (automatic)
-rtk gain
+**Status at v0.44.1**: clean — upstream's `CLAUDE.md` no longer carries a
+Language/Communication section, so the fork's English override is no longer
+needed and was dropped.
 
-# Detailed breakdown
-bash scripts/fork-stats.sh
-```
+**After every upstream sync, re-check**:
+- any Language / Communication section — confirm English
+- personal style, tone, or workflow preferences
+- dev workflow assumptions that differ from this environment (paths, tools, OS)
+
+### Fork patches that upstream adopts must be dropped, not merged
+
+Several fork patches were silently superseded between v0.30.0 and v0.44.1 (see
+History). Re-triage every patch each sync rather than carrying it forward by
+default — a stale fork patch that fights an upstream fix is worse than no patch.
 
 ## How to Sync with Upstream
 
 ```bash
+git fetch upstream --tags --prune
 git checkout master
-git pull origin master
-# Rebuild and deploy
+git branch backup/pre-sync-$(date +%Y%m%d)          # safety net
+
+git merge --no-ff --no-commit vX.Y.Z                # expect conflicts
+git read-tree --reset -u vX.Y.Z                     # upstream wins wholesale
+# then re-apply only the patches in "Our Customizations" that survive triage
+
 cargo build --release
-sudo cp target/release/rtk /usr/local/bin/rtk
+cargo test
+install -m755 target/release/rtk ~/.cargo/bin/rtk
 rtk --version
 ```
+
+Resolving conflicts by taking upstream wholesale and *re-applying* a short,
+documented patch list is far cheaper than hand-merging a restructured tree —
+upstream moved `src/*.rs` into `src/cmds/**`, `src/core/**`, and `src/hooks/**`
+in the 0.3x→0.4x range, so textual cherry-picks across that boundary do not apply.
 
 ## History
 
 | Date | Action |
 |------|--------|
-| 2026-02-20 | Initial fork setup. Synced from 0.18.0 to 0.22.2. Dropped obsolete grep bash flag stripping (upstream fixed in Rust). |
-| 2026-02-20 | Phase 1: LLM-friendly output messages merged to master. |
+| 2026-02-20 | Initial fork setup. Synced 0.18.0 → 0.22.2. |
+| 2026-02-20 | Phase 1: LLM-friendly output messages. |
 | 2026-02-21 | Phase 2: fork_tag tracking, tee integration, log truncation fix, fork-stats script. |
-| 2026-02-21 | Docs: Added Sync Risks section documenting CLAUDE.md personal preference inheritance risk. |
-| 2026-02-22 | Merged grep flag stripping hook fix (b9094b2 → 765611e). Upstream did not fix: trailing_var_arg only captures flags after positional args, so -rn before pattern still errors. |
+| 2026-02-22 | Merged grep flag stripping hook fix. |
+| 2026-02-22 | Synced to v0.30.0. |
+| 2026-07-29 | Synced to **v0.44.1**. Dropped 8 of 12 fork patches as superseded or obsolete (hook grep-flag stripping, `wc` hook rewrite, `hook-audit`/`wc` CLI wiring, tee UTF-8 truncation, tee integration, grep header wording, CLAUDE.md English override, rustfmt fix). Dropped `fork_tag` tracking + `scripts/fork-stats.sh` deliberately — see below. Kept the four patches above. |
+
+### Dropped at the 2026-07-29 sync: `fork_tag` tracking
+
+`fork_tag` (tracking DB column, `track_tagged()`, `get_fork_stats()`, the
+`rtk gain` fork section, and `scripts/fork-stats.sh`) measured fork-vs-upstream
+savings. It was dropped because:
+
+- it required changing `Tracker::record()`'s signature, touching every call site
+  in a tree upstream had just restructured — high merge cost, permanently, at
+  every future sync;
+- it existed to attribute savings across a fork surface that is now four small
+  patches, two of which are a one-line constant and a build config;
+- upstream adopted the features it was mainly measuring (`ks:tee`, and the grep
+  "N matches in M files" header), so the interesting rows would read zero.
+
+It is recoverable from `backup/pre-sync-20260729` (commit `62b32e0`) if the fork
+surface ever grows enough to justify the attribution machinery again.

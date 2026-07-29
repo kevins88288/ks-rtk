@@ -7,7 +7,6 @@
 //!
 //! The three-tier system ensures RTK never returns false data silently.
 
-pub mod error;
 pub mod formatter;
 pub mod types;
 
@@ -29,6 +28,7 @@ pub enum ParseResult<T> {
 
 impl<T> ParseResult<T> {
     /// Unwrap the parsed data, panicking on Passthrough
+    #[allow(dead_code)]
     pub fn unwrap(self) -> T {
         match self {
             ParseResult::Full(data) => data,
@@ -38,6 +38,7 @@ impl<T> ParseResult<T> {
     }
 
     /// Get the tier level (1 = Full, 2 = Degraded, 3 = Passthrough)
+    #[allow(dead_code)]
     pub fn tier(&self) -> u8 {
         match self {
             ParseResult::Full(_) => 1,
@@ -47,11 +48,13 @@ impl<T> ParseResult<T> {
     }
 
     /// Check if parsing succeeded (Full or Degraded)
+    #[allow(dead_code)]
     pub fn is_ok(&self) -> bool {
         !matches!(self, ParseResult::Passthrough(_))
     }
 
     /// Map the parsed data while preserving tier
+    #[allow(dead_code)]
     pub fn map<U, F>(self, f: F) -> ParseResult<U>
     where
         F: FnOnce(T) -> U,
@@ -64,6 +67,7 @@ impl<T> ParseResult<T> {
     }
 
     /// Get warnings if Degraded tier
+    #[allow(dead_code)]
     pub fn warnings(&self) -> Vec<String> {
         match self {
             ParseResult::Degraded(_, warnings) => warnings.clone(),
@@ -85,14 +89,21 @@ pub trait OutputParser: Sized {
     fn parse(input: &str) -> ParseResult<Self::Output>;
 
     /// Parse with explicit tier preference (for testing/debugging)
+    #[allow(dead_code)]
     fn parse_with_tier(input: &str, max_tier: u8) -> ParseResult<Self::Output> {
         let result = Self::parse(input);
         if result.tier() > max_tier {
             // Force degradation to passthrough if exceeds max tier
-            return ParseResult::Passthrough(truncate_output(input, 500));
+            return ParseResult::Passthrough(truncate_passthrough(input));
         }
         result
     }
+}
+
+/// Truncate output using configured passthrough limit
+pub fn truncate_passthrough(output: &str) -> String {
+    let max_chars = crate::core::config::limits().passthrough_max_chars;
+    truncate_output(output, max_chars)
 }
 
 /// Truncate output to max length with ellipsis
@@ -156,13 +167,12 @@ pub fn extract_json_object(input: &str) -> Option<&str> {
         found_start?
     };
 
-    // Brace-balance forward from start_pos
+    // Brace-balance forward from start_pos using byte offsets (not char indices)
     let mut depth = 0;
     let mut in_string = false;
     let mut escape_next = false;
-    let chars: Vec<char> = input[start_pos..].chars().collect();
 
-    for (i, &ch) in chars.iter().enumerate() {
+    for (byte_offset, ch) in input[start_pos..].char_indices() {
         if escape_next {
             escape_next = false;
             continue;
@@ -175,8 +185,7 @@ pub fn extract_json_object(input: &str) -> Option<&str> {
             '}' if !in_string => {
                 depth -= 1;
                 if depth == 0 {
-                    // Found matching closing brace
-                    let end_pos = start_pos + i + 1; // +1 to include the `}`
+                    let end_pos = start_pos + byte_offset + ch.len_utf8();
                     return Some(&input[start_pos..end_pos]);
                 }
             }
@@ -306,6 +315,38 @@ Scope: all 6 workspace projects
         let input = r#"{"numTotalTests": 1, "message": "test {should} not confuse parser"}"#;
         let extracted = extract_json_object(input).expect("Should extract JSON");
         assert!(extracted.contains("test {should} not confuse parser"));
+        assert_eq!(extracted, input);
+    }
+
+    #[test]
+    fn test_extract_json_object_cjk_values() {
+        let input = r#"{"name": "테스트", "결과": "성공", "count": 3}"#;
+        let extracted = extract_json_object(input).expect("Should extract JSON with CJK");
+        assert_eq!(extracted, input);
+    }
+
+    #[test]
+    fn test_extract_json_object_emoji_values() {
+        let input = r#"{"status": "🎉 passed", "icon": "✅", "count": 1}"#;
+        let extracted = extract_json_object(input).expect("Should extract JSON with emoji");
+        assert_eq!(extracted, input);
+    }
+
+    #[test]
+    fn test_extract_json_object_cjk_prefix() {
+        let input =
+            "빌드 출력 시작\n경고: 사용되지 않음\n\n{\"numTotalTests\": 5, \"passed\": true}\n";
+        let extracted = extract_json_object(input).expect("Should extract JSON after CJK prefix");
+        assert!(extracted.contains("numTotalTests"));
+        assert!(extracted.starts_with('{'));
+        assert!(extracted.ends_with('}'));
+    }
+
+    #[test]
+    fn test_extract_json_object_mixed_multibyte_nested() {
+        let input = r#"{"results": [{"名前": "テスト1", "data": {"emoji": "🚀"}}]}"#;
+        let extracted =
+            extract_json_object(input).expect("Should extract nested JSON with mixed multibyte");
         assert_eq!(extracted, input);
     }
 }

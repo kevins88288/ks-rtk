@@ -10,47 +10,49 @@ Trigger: pull_request to develop or master
                           └────────┬─────────┘
                                    │
                           ┌────────▼─────────┐
-                          │       fmt         │
+                          │    fmt --all     │
                           └────────┬─────────┘
                                    │
-                          ┌────────▼─────────┐
-                          │     clippy        │
-                          └──┬───┬───┬───┬───┘
-                             │   │   │   │
-              ┌──────────────┘   │   │   └──────────────┐
-              │          ┌───────┘   └───────┐          │
-              ▼          ▼                   ▼          ▼
-     ┌──────────────┐ ┌──────────────┐ ┌───────────┐ ┌──────────┐
-     │ test         │ │Security Scan │ │ benchmark │ │ validate │
-     │ ubuntu       │ │ cargo audit  │ │ >=80%     │ │ ai agent │
-     │ windows      │ │ (advisory)   │ │ savings   │ │ doc      │
-     │ macos        │ │              │ │           │ │          │
-     └──────┬───────┘ └──────┬───────┘ └─────┬─────┘ └────┬─────┘
-            │                │               │             │
-            └────────────────┴───────┬───────┴─────────────┘
-                                     │
-                          ┌──────────▼─────────┐
-                          │  All must pass     │
-                          │  to merge          │
-                          └────────────────────┘
+                       ┌───────────▼──────────┐
+                       │ clippy --all-targets │
+                       └───┬───┬───┬───┬───┬──┘
+                           │   │   │   │   │
+           ┌───────────────┘   │   │   │   └────────────────┐
+           │       ┌───────────┘   │   └───────────┐        │
+           ▼       ▼              ▼               ▼        ▼
+     ┌──────────┐ ┌──────────┐ ┌───────────┐ ┌─────────┐ ┌──────────┐
+     │ test     │ │ security │ │ semgrep   │ │benchmark│ │ doc      │
+     │ ubuntu   │ │ cargo    │ │ AST-aware │ │ >=80%   │ │ review   │
+     │ windows  │ │ audit    │ │ diff-only │ │ savings │ │ ai agent │
+     │ macos    │ │ patterns │ │           │ │         │ │          │
+     └────┬─────┘ └────┬─────┘ └─────┬─────┘ └────┬────┘ └────┬─────┘
+          │            │             │             │            │
+          └────────────┴─────────┬───┴─────────────┴────────────┘
+                                 │
+                      ┌──────────▼─────────┐
+                      │  All must pass     │
+                      │  to merge          │
+                      └────────────────────┘
 
      + DCO check (independent, develop PRs only)
+     + Dependabot (weekly: Cargo deps + GitHub Actions)
 ```
 
 ## Merge to develop — pre-release (cd.yml)
 
-Trigger: push to develop | Concurrency: cancel-in-progress
+Trigger: push to develop | workflow_dispatch (not master) | Concurrency: cancel-in-progress
 
 ```
      ┌──────────────────┐
      │ push to develop   │
+     │ OR dispatch       │
      └────────┬─────────┘
               │
      ┌────────▼──────────────────┐
      │ pre-release                │
-     │ read Cargo.toml version   │
-     │ tag = v{ver}-rc.{run}     │
-     │ safety: fail if exists    │
+     │ compute next version      │
+     │ from conventional commits │
+     │ tag = v{next}-rc.{run}    │
      └────────┬──────────────────┘
               │
      ┌────────▼──────────────────┐
@@ -74,7 +76,7 @@ Trigger: push to develop | Concurrency: cancel-in-progress
 
 ## Merge to master — stable release (cd.yml)
 
-Trigger: push to master | Concurrency: never cancelled
+Trigger: push to master (only) | Concurrency: never cancelled
 
 ```
      ┌──────────────────┐

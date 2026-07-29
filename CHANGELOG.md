@@ -5,6 +5,732 @@ All notable changes to rtk (Rust Token Killer) will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.44.1](https://github.com/rtk-ai/rtk/compare/v0.44.0...v0.44.1) (2026-07-28)
+
+
+### Bug Fixes
+
+* **cicd:** git app token for next release ([48d45d3](https://github.com/rtk-ai/rtk/commit/48d45d366627d405397d974808392f7294266e84))
+* **cicd:** git app token for next release ([cdfb14c](https://github.com/rtk-ai/rtk/commit/cdfb14c0f036bc5c6d36a9dc794e536b4f8eca5f))
+* **hook:** detect Copilot CLI shell tool on Windows ([7da2674](https://github.com/rtk-ai/rtk/commit/7da2674073394194754a228d346189a74869e6ba))
+* **hook:** detect Copilot CLI shell tool on Windows ([10ca886](https://github.com/rtk-ai/rtk/commit/10ca886c92f8423f60c3fcbfd7a75e26f396845f)), closes [#3178](https://github.com/rtk-ai/rtk/issues/3178)
+* **search:** display nb line only if requested ([a8b9eb3](https://github.com/rtk-ai/rtk/commit/a8b9eb39011cd64aa715861c2d11820ee55fb221))
+
+## [0.44.0](https://github.com/rtk-ai/rtk/compare/v0.43.0...v0.44.0) (2026-07-26)
+
+
+### Features
+
+* add git checkout support ([be1844c](https://github.com/rtk-ai/rtk/commit/be1844c7c5bdcdbdad8698c7fb38f6670fdad494))
+* add git checkout support ([bb01d6c](https://github.com/rtk-ai/rtk/commit/bb01d6c8ba6dc7dca8dfe209b04703dfef4c4264))
+* add uv run support ([a5f0774](https://github.com/rtk-ai/rtk/commit/a5f0774d0ede5071f4d9231efc722e4ad04cded4))
+* **cargo:** route --message-format=json builds through explicit arg detection ([5ea03f3](https://github.com/rtk-ai/rtk/commit/5ea03f3d1bd30803a333ead8082ee716e25256fc))
+* **hook:** add Cargo.lock ([531bc93](https://github.com/rtk-ai/rtk/commit/531bc9380cd43e10914f1449315201aff15b9153))
+* **hook:** add Cargo.lock ([fa0afa5](https://github.com/rtk-ai/rtk/commit/fa0afa51ee9f378670e2c55ab4022976e4e4646c))
+* **hook:** add support for Kimi AI agent ([7624c43](https://github.com/rtk-ai/rtk/commit/7624c434882bf8781a0c7281b059397371341525))
+* **hooks:** add Factory Droid integration ([8a8b356](https://github.com/rtk-ai/rtk/commit/8a8b356915c62e3a0c505fde76f8871239888e03))
+* **hooks:** add Factory Droid integration ([38028b7](https://github.com/rtk-ai/rtk/commit/38028b7ce514e1b0f506d4ba94ea0a2d0589d924))
+* **hook:** wire TOML filters + better tee tail hint ([31f9d43](https://github.com/rtk-ai/rtk/commit/31f9d43d81f90d29e89142f3306473e786e59f6c))
+* **hook:** wire TOML filters into the rewrite path + reversible truncation ([73b8cb3](https://github.com/rtk-ai/rtk/commit/73b8cb3069297374a3de58552b9fe4aa2cda3a41))
+* **php:** consolidated PHP tooling (php, artisan, phpunit, phpstan, pest, paratest, ecs, pint) ([1052c1c](https://github.com/rtk-ai/rtk/commit/1052c1c7027d5a720e3a416a5afb7c1c4c3f5bfc))
+* **pipe:** expose PHP tool filters as stdin pipe filters ([214a79a](https://github.com/rtk-ai/rtk/commit/214a79a9ff0a5991ae7dc86badb72f3275333498))
+* **sbt:** add SBT (Scala Build Tool) support ([4f86523](https://github.com/rtk-ai/rtk/commit/4f865233db81d9075d237bc8fea82f15013baedc))
+* **trust:** gate custom filters (project + user-global) + init opt-in flags ([1130a7c](https://github.com/rtk-ai/rtk/commit/1130a7cafd4df9ca111525dc704a68898594d4ae))
+* **trust:** rtk trust uses the same opt-in prompt as init ([e0a83ac](https://github.com/rtk-ai/rtk/commit/e0a83ac824a44450b014838e7bbcb2cfcb872c8f))
+
+
+### Bug Fixes
+
+* **analytics:** floor prefix slices to char boundary instead of full-string fallback ([c9468ee](https://github.com/rtk-ai/rtk/commit/c9468ee178083aeecbaafb2afdd00887f2eca193))
+* **analytics:** truncate display strings on UTF-8 char boundaries ([e200764](https://github.com/rtk-ai/rtk/commit/e20076433e0a8e19801ed5c39e03ea25a98a9c1c))
+* **analytics:** truncate display strings on UTF-8 char boundaries ([47b22e0](https://github.com/rtk-ai/rtk/commit/47b22e03a4759972c11032e642710a473b9706ce)), closes [#2787](https://github.com/rtk-ai/rtk/issues/2787)
+* **benchmark:** use deterministic curl and wget responses ([3304d90](https://github.com/rtk-ai/rtk/commit/3304d903a6e3eb982ba60a27fb65a85c86f5090d))
+* **benchmark:** use deterministic curl and wget responses ([6c57836](https://github.com/rtk-ai/rtk/commit/6c57836bfbfc09bddbafeee171dabe737d009c9b))
+* **benchmark:** use stable indexed MockHTTP responses ([8dd5a34](https://github.com/rtk-ai/rtk/commit/8dd5a3476d2a81f1612fbc0be9cac07d09b19e89))
+* **cargo:** give the json batch filter the exit code ([a3e65e9](https://github.com/rtk-ai/rtk/commit/a3e65e99e9eb7e1151b726b836b372ab5d857893))
+* **cargo:** honor last --message-format when the flag is repeated ([25d6a09](https://github.com/rtk-ai/rtk/commit/25d6a09c01a6d906da49ba8c51f61ce4ee2d7785))
+* **cargo:** keep "No issues found" wording for clean clippy json runs ([1f74614](https://github.com/rtk-ai/rtk/commit/1f74614ea8c148fbfe6886b445519e58d32af3ec))
+* **cargo:** label check output as "check" instead of "build" ([90b4f5f](https://github.com/rtk-ai/rtk/commit/90b4f5f40fc561bad3616c3aefc3cb21c22c0088))
+* **cargo:** match the human path when skipping the json warning summary ([59ed885](https://github.com/rtk-ai/rtk/commit/59ed885752a9ba3e77ee2dd02a75000cc6c1aba9))
+* **cargo:** restore failure check before trusting reused build filter ([e4bfe35](https://github.com/rtk-ai/rtk/commit/e4bfe3593c04a497770f6f6492599ac77b3c948d))
+* **cargo:** skip "N warnings generated" record in json diagnostics ([9ae0872](https://github.com/rtk-ai/rtk/commit/9ae0872aeebc777f7850d5b4f16b0943fe7bc765))
+* **cargo:** strip ansi from json rendered diagnostics ([b47653a](https://github.com/rtk-ai/rtk/commit/b47653a9ec2d5a3fcc1df28b36d23156bb92112a))
+* **cargo:** surface --message-format=json build errors instead of "compiled" ([a4b7f74](https://github.com/rtk-ai/rtk/commit/a4b7f7422e5a330c88ad33b9cfda86866a5c8c2c))
+* **cargo:** surface --message-format=json clippy errors ([58abbf2](https://github.com/rtk-ai/rtk/commit/58abbf253c0fcca15ccd3d8f7441898fe72b3399))
+* **cargo:** surface --message-format=json install errors ([7fb9459](https://github.com/rtk-ai/rtk/commit/7fb9459fc6fe7b4d69ad8abfeb815427b615c368))
+* **cargo:** surface --message-format=json test compile errors ([f9b720c](https://github.com/rtk-ai/rtk/commit/f9b720c8f7e7c972739b84679d451e50ba0b6124))
+* **cargo:** tee-hint dropped json diagnostics beyond the cap ([cf1caf9](https://github.com/rtk-ai/rtk/commit/cf1caf93b8cdfd2db974ff3cb1b3859cbb955257))
+* **cargo:** tighten json warning-summary skip to ends_with ([6c9a60d](https://github.com/rtk-ai/rtk/commit/6c9a60d83e2911f7367642b2e8242d11035118e7))
+* **ccusage:** accept `period` key from current ccusage ([d823aaf](https://github.com/rtk-ai/rtk/commit/d823aaf76721d9b0a02cd428ea714980ef80df2c))
+* **ccusage:** accept `period` key from current ccusage ([d0a77cd](https://github.com/rtk-ai/rtk/commit/d0a77cdb4844027d37af9c7a6d853ad923cac37a))
+* **cicd:** next release pr target fork compatibel ([6e34bba](https://github.com/rtk-ai/rtk/commit/6e34bbaa989487b671952c07105706f006841f23))
+* **cicd:** next release pr target fork compatible ([ce30f37](https://github.com/rtk-ai/rtk/commit/ce30f378e3b6797361a73166adcb1238a7c054ad))
+* **copilot:** add missing 'get' to kubectl example in init template ([f9d8c77](https://github.com/rtk-ai/rtk/commit/f9d8c775b1e7f94f449c400f4130410170e590ad))
+* **copilot:** remove unnecessary test ([b49568f](https://github.com/rtk-ai/rtk/commit/b49568ff730608d6ae815a11ed2ab230aecd5657))
+* **copilot:** support IDE terminal hooks ([1d6798d](https://github.com/rtk-ai/rtk/commit/1d6798de8aee0940b490719153e7554845f8f43c))
+* **copilot:** support IDE terminal hooks ([d0f004f](https://github.com/rtk-ai/rtk/commit/d0f004f61da16eaba12f69c4542ac6d50754d63d))
+* detect absolute rtk path in Claude hook settings ([5d32d07](https://github.com/rtk-ai/rtk/commit/5d32d0736f686b69d1e8b9dc45c007d4eb77a0a2))
+* detect absolute rtk path in Claude hook settings ([48b883f](https://github.com/rtk-ai/rtk/commit/48b883f49eacc5c1e9301a5e9fb6916053f632a3))
+* **filter:** address review findings in the TOML filter path ([315a943](https://github.com/rtk-ai/rtk/commit/315a94398ec06e70e7cebd3647d5a00a0bd76edc))
+* **gain:** note untrusted custom filters so they can be re-trusted ([a4872d9](https://github.com/rtk-ai/rtk/commit/a4872d9bbf1e5002381d6c7973803b7ae2010077))
+* **git:** compact git stash show instead of forcing -p ([1b38eec](https://github.com/rtk-ai/rtk/commit/1b38eece9b08ac00d4cd49a7354413485501afcc))
+* **git:** compact git stash show instead of forcing -p ([add35e0](https://github.com/rtk-ai/rtk/commit/add35e0928540b44b7bdaa820a3620464e11fbf8))
+* **git:** compress git stash show summary line ([0ac5f5c](https://github.com/rtk-ai/rtk/commit/0ac5f5c3118a5e244c58d2dc24d8b9cb0a954b21))
+* **grep:** only insert -- separator when context flags are active ([34a0f0e](https://github.com/rtk-ai/rtk/commit/34a0f0e5c00e8f3e98ac8d430b9e1681bdf9b680))
+* **grep:** preserve -- separator between non-adjacent match blocks ([6871e55](https://github.com/rtk-ai/rtk/commit/6871e55358acb43a2aa6390565be3b45d64e08b2))
+* **grep:** preserve -- separator between non-adjacent match blocks ([cae9b71](https://github.com/rtk-ai/rtk/commit/cae9b710d4aca0f588ea1b1d5b1341b414c3f2c8)), closes [#2795](https://github.com/rtk-ai/rtk/issues/2795)
+* **hook:** handle AskRewrite in Cursor hook when no rules configured ([ff0b9ac](https://github.com/rtk-ai/rtk/commit/ff0b9ac28cc1f5215760f123cefff23c62c0821a)), closes [#2372](https://github.com/rtk-ai/rtk/issues/2372)
+* **hook:** include ask rules in cursor_has_explicit_rules check ([3362325](https://github.com/rtk-ai/rtk/commit/33623258b8354601bdfd83d1ff6cdb7a2b316fc8))
+* **hook:** kimi init writes AGENTS.md instead of dead .kimirules ([8fe4a40](https://github.com/rtk-ai/rtk/commit/8fe4a406125a454450e6ffdbcf743c1a20a12418))
+* **hooks:** distinguish explicit ask from default in AskRewrite ([0df6929](https://github.com/rtk-ai/rtk/commit/0df69293ac352f56e507ab9e72d7396abbccc078))
+* **hooks:** don't force-allow Droid rewrites ([9dd8211](https://github.com/rtk-ai/rtk/commit/9dd82113adeccdb9597a1f871922f92335643a7b))
+* **hooks:** emit permissionDecision allow for simple Copilot CLI rewrites ([23d1e89](https://github.com/rtk-ai/rtk/commit/23d1e899ce89bef54dfa7f3b6f66374c24f311e7))
+* **hooks:** emit permissionDecision allow for simple Copilot CLI rewrites ([84aa4d6](https://github.com/rtk-ai/rtk/commit/84aa4d6f71bea0e39e234a0869dd82ee075c7286)), closes [#3037](https://github.com/rtk-ai/rtk/issues/3037)
+* **hooks:** install Droid hook into canonical hooks.json ([da36ba3](https://github.com/rtk-ai/rtk/commit/da36ba3935a4c476edaedd3e447c9c58e1bc0f09))
+* **hooks:** make Droid verdicts deny-only from explicit lists in all scopes ([3d40742](https://github.com/rtk-ai/rtk/commit/3d407426b5ca63ca7e6bd0f31a572e9b0342b05b))
+* **hooks:** source Droid verdicts from Droid's own permission lists ([70ed82a](https://github.com/rtk-ai/rtk/commit/70ed82a7b7af743369daba99a9450cdbf5888049))
+* **hook:** use ask action in audit log for AskRewrite verdict ([36dd8f2](https://github.com/rtk-ai/rtk/commit/36dd8f24792b4d36af59a114bdce01d4f5a8cbf1))
+* **hook:** use ask permission for AskRewrite in Cursor hook ([a0c16ef](https://github.com/rtk-ai/rtk/commit/a0c16ef0bcf9d7f8403c098c5f26bb4f8dcd98f6))
+* **init:** honor RTK_TELEMETRY_DISABLED in consent prompt ([#1307](https://github.com/rtk-ai/rtk/issues/1307)) ([66e09cb](https://github.com/rtk-ai/rtk/commit/66e09cbefe02bf82b159a44278250e45e506810b))
+* **init:** honor RTK_TELEMETRY_DISABLED in consent prompt ([#1307](https://github.com/rtk-ai/rtk/issues/1307)) ([debac0f](https://github.com/rtk-ai/rtk/commit/debac0f4c62f875b25a8afa33e57dc4283fd24d7))
+* **openclaw:** handle exit code 3 from rtk rewrite ([487a2e7](https://github.com/rtk-ai/rtk/commit/487a2e7b2c381071e61062e5dfff8d2e790c54c8)), closes [#2202](https://github.com/rtk-ai/rtk/issues/2202)
+* **parser:** use byte offsets instead of char indices in extract_json_object ([32dda24](https://github.com/rtk-ai/rtk/commit/32dda24e5b71c04d1aabe36f299e4b6d786a5421))
+* **parser:** use byte offsets instead of char indices in extract_json_object ([27f9739](https://github.com/rtk-ai/rtk/commit/27f9739b29e5e42bbe927cddf61bbbc03f1e53d9)), closes [#2509](https://github.com/rtk-ai/rtk/issues/2509)
+* **permissions:** stop extra whitespace from evading deny rules ([3483786](https://github.com/rtk-ai/rtk/commit/348378602e97a93a4a39449c13cb00882bba44dc))
+* **permissions:** stop extra whitespace from evading deny rules ([f6b9290](https://github.com/rtk-ai/rtk/commit/f6b92900603adf00ecd30d2119d63a322a471583))
+* **php:** address phpstan review feedback (resolution, text fallback, path compaction) ([07c231e](https://github.com/rtk-ai/rtk/commit/07c231ee4cc31fa1df218a91ec7d8046144c1c7b))
+* **php:** align pint/phpstan parsers with current tool schemas ([0b75581](https://github.com/rtk-ai/rtk/commit/0b75581f6b9a2df1a4066b01f0b1d6cf8dbbab37))
+* **php:** anchor phpunit failure-heading detection to the "N) " format ([128d04f](https://github.com/rtk-ai/rtk/commit/128d04f7790990a20ee7609f77cc8baa105dc526))
+* **php:** classify php subcommands in the PASSTHROUGH list ([4a37246](https://github.com/rtk-ai/rtk/commit/4a37246a051e6b4585a4a396e2581854a930f029))
+* **php:** default pint applied_fixers when key is absent ([0cc15dc](https://github.com/rtk-ai/rtk/commit/0cc15dc4484d9bec5a11e770515f8c2d69378de5))
+* **php:** detect phpstan analyse after global flags; avoid duplicate format ([7cc46b4](https://github.com/rtk-ai/rtk/commit/7cc46b46766e4b37256f385392ed0c6a4ea7bc85))
+* **php:** drop bogus pest.php check in test-runner detection ([28366ce](https://github.com/rtk-ai/rtk/commit/28366ce17bd9f7fe898deee8b2a7ca8e3223c8de))
+* **php:** rewrite ./vendor/bin/&lt;tool&gt; form for phpunit/pest/paratest/ecs/pint ([88e56ce](https://github.com/rtk-ai/rtk/commit/88e56cef85dbbaf74f9857ecfa634b9da6db57d9))
+* **php:** route php_tool_command through resolved_command ([8eae6b7](https://github.com/rtk-ai/rtk/commit/8eae6b7334ccc43758f8870773c491ebc4e99f35))
+* **php:** strip ANSI in phpunit filter and split errors from failures ([8825480](https://github.com/rtk-ai/rtk/commit/8825480b7af671cb7cbf87f8c902f79486d4eb95))
+* **pipe:** anchor phpunit auto-detection to the leading banner ([50a8743](https://github.com/rtk-ai/rtk/commit/50a8743041081f7185ecd8e3ca48e432fb8ca5f4))
+* **pytest:** strip ANSI so colored runs don't dump raw output ([aba7643](https://github.com/rtk-ai/rtk/commit/aba7643189cd19ed939f4f37b1e0159589a6f151))
+* **python:** stop reporting a failed tool run as clean ([86b34df](https://github.com/rtk-ai/rtk/commit/86b34df8e3d4eb48b03b898a58757fccff43592b))
+* remove absolute Claude hook commands ([b0c0b20](https://github.com/rtk-ai/rtk/commit/b0c0b204d841193ea83f27e1c194162195d6ab93))
+* rewrite only safe final pipeline commands ([590445e](https://github.com/rtk-ai/rtk/commit/590445e7598a37c60b310d8f157dd0b7af7a3421))
+* **rewrite:** keep pipeline-final wc commands raw ([1c5a23c](https://github.com/rtk-ai/rtk/commit/1c5a23c64a5912150989626be7e4c3a468848313))
+* **ruff:** bound output when user sets --output-format ([fa82e18](https://github.com/rtk-ai/rtk/commit/fa82e18d56d55ddac6d1a18621e492786ed02016))
+* **ruff:** honour a user-supplied --output-format ([44982e0](https://github.com/rtk-ai/rtk/commit/44982e070bc4e1668eb66abf1b05caacb0ab14df))
+* **run:** propagate signal exit code instead of unwrap_or(1) ([113ae11](https://github.com/rtk-ai/rtk/commit/113ae1188aee7611754a1ac664eec9a138c14257))
+* **sbt:** address review feedback on output guard, routing, and dead code ([ef38103](https://github.com/rtk-ai/rtk/commit/ef38103fed2480975b3d729e094628548d83130e))
+* **sbt:** compute tee label before args_display move ([3dff2aa](https://github.com/rtk-ai/rtk/commit/3dff2aa0f7d476187db998e00b4a7fc3e5ab1a01))
+* **sbt:** drop sbt 0.13 legacy task names ([f6a4c41](https://github.com/rtk-ai/rtk/commit/f6a4c416927663a35eca08f94298300c85154a75))
+* **sbt:** filter testOnly/testQuick like sbt test ([194f392](https://github.com/rtk-ai/rtk/commit/194f39253992fbc8f8375159c4694e5936e04a1c))
+* **sbt:** filter testOnly/testQuick like sbt test ([c02f4d0](https://github.com/rtk-ai/rtk/commit/c02f4d00f5213b83e189254b9ffe065fe1b0cf9d))
+* **sbt:** separate tee label for selective test tasks ([973b3b6](https://github.com/rtk-ai/rtk/commit/973b3b6286049973945f82316ec684e13d205aae))
+* **search:** stream piped grep and rg output ([66b95cb](https://github.com/rtk-ai/rtk/commit/66b95cb94abb8c97d35997fb1acd2a891b336e44))
+* **test:** adapt new rewrite_command signature in php-tooling tests ([c37eed9](https://github.com/rtk-ai/rtk/commit/c37eed962850af470de5c1bc0a69f26f8ea92ef9))
+* tokenize |& as a single pipe operator ([ee149ee](https://github.com/rtk-ai/rtk/commit/ee149ee34a9f1cd82206b1c5f868a6884040d93c))
+* **trust:** label detected filters as project- or global-scoped ([a9c33e2](https://github.com/rtk-ai/rtk/commit/a9c33e298768b0f33f401f71ca78f4df272fd936))
+* **trust:** skip untrusted filters silently on the command path ([9d3b678](https://github.com/rtk-ai/rtk/commit/9d3b6782420b8ea93267eca91321235f60253fc0))
+* **trust:** surface parse errors, skip already-trusted files, fail loudly when non-interactive ([2d487cb](https://github.com/rtk-ai/rtk/commit/2d487cb9477a02e3bebd0ea7b77d7826c724442a))
+* **uv:** make tee recovery hints resolve to the data they promise ([bf14bf5](https://github.com/rtk-ai/rtk/commit/bf14bf54f085c1f80510a05150e121cc0c72ab46))
+* **uv:** pass guard_raw arg to print_with_hint after signature change ([7e42d92](https://github.com/rtk-ai/rtk/commit/7e42d929e44d7c4fbd412de5dd4e5356613deba5))
+* **uv:** preserve program output and restore inner-command filtering ([dfd1810](https://github.com/rtk-ai/rtk/commit/dfd1810dc9d260b8a62931392368a34606301fc0))
+* **uv:** preserve program stdout and restore inner-command filtering ([8dd4aac](https://github.com/rtk-ai/rtk/commit/8dd4aacd6d917245c6a3fa2e350dab4309498079))
+* **uv:** remove uv run from transparent prefixes to fix rewrite conflicts ([8cdc861](https://github.com/rtk-ai/rtk/commit/8cdc861ede47b3871191265b90e12edc02188a31))
+* **uv:** remove uv run from transparent prefixes to fix rewrite conflicts ([96f9422](https://github.com/rtk-ai/rtk/commit/96f94222cbae9c9c9de5e05959388356026db5b6))
+
+
+### Performance Improvements
+
+* **hook:** match TOML filters with a match-only RegexSet ([34c0bcf](https://github.com/rtk-ai/rtk/commit/34c0bcf2da7b585aa9a2fa619d23764b720c453b))
+* **php:** cache composer_bin_dirs to avoid per-segment file reads ([5d2928c](https://github.com/rtk-ai/rtk/commit/5d2928c64e14b96e91a80761136aeb3e27fe5480))
+* **php:** resolve cwd once in pint output instead of per file ([b5c3f7f](https://github.com/rtk-ai/rtk/commit/b5c3f7fac56a3f273c3a6517fb920e5970f7c545))
+
+
+### Reverts
+
+* **cargo:** drop --message-format=json install routing ([751bf3e](https://github.com/rtk-ai/rtk/commit/751bf3e76077db278a54a0bfa5177162478fe8b8))
+
+## [0.43.0](https://github.com/rtk-ai/rtk/compare/v0.42.4...v0.43.0) (2026-06-28)
+
+
+### Features
+
+* **grep:** sort content alphabetically ([307b557](https://github.com/rtk-ai/rtk/commit/307b5573838d24cc59191c12422ef1f216b9a087))
+* **oc:** add Openshift CLI support with shared k8s filtering ([39cbb96](https://github.com/rtk-ai/rtk/commit/39cbb968970d705d2080fc4062397f5b8650b595))
+* **oc:** add Openshift CLI support with shared k8s filtering ([c7f493b](https://github.com/rtk-ai/rtk/commit/c7f493b0cd0fbe9ed1d2da8ea66f86f2ca26cd01))
+* **pulumi:** add CLI filters for preview/up/destroy/refresh/stack ([ced70c6](https://github.com/rtk-ai/rtk/commit/ced70c6f0dcccd85365dcc78ca58f6b330d799e8))
+
+
+### Bug Fixes
+
+* **aws:** guard the s3 ls and s3 sync/cp text emits ([25a095e](https://github.com/rtk-ai/rtk/commit/25a095e90d7f8320d80577177f7623b13fa1bbad))
+* **core:** never-worse output guard ([af81b08](https://github.com/rtk-ai/rtk/commit/af81b08175af063c8b631979959d80c9007d089f))
+* **core:** never-worse output guard so RTK never exceeds the raw command ([861a46d](https://github.com/rtk-ai/rtk/commit/861a46dee57f50216862ac83b0ee57974f383203))
+* **diff:** report modified-only diffs and follow diff exit convention ([3a73bcd](https://github.com/rtk-ai/rtk/commit/3a73bcdffc553c0b1b81ea423b98b221468a7289))
+* **docker:** make the agent's command authoritative for the guard baseline ([b52db52](https://github.com/rtk-ai/rtk/commit/b52db52da065f65f9838e7fd12c496b7d28d06e8))
+* **docker:** report 0 containers/images instead of empty output ([3d4189c](https://github.com/rtk-ai/rtk/commit/3d4189cc6304a8eefc7ab94388b268054b94a634))
+* **dotnet:** keep raw fallback when parsed failures incomplete ([5e7eab5](https://github.com/rtk-ai/rtk/commit/5e7eab5846cfe2de1f0d0c2a7d6c38c8de6c65e5))
+* **dotnet:** stop duplicating failures on failing test runs ([2d9dc1a](https://github.com/rtk-ai/rtk/commit/2d9dc1ab9e0d25bf7fa6b8696f8909a561dd267f)), closes [#2501](https://github.com/rtk-ai/rtk/issues/2501)
+* **dotnet:** stop duplicating failures on failing test runs ([#2501](https://github.com/rtk-ai/rtk/issues/2501)) ([6946bf9](https://github.com/rtk-ai/rtk/commit/6946bf9562a26c7248d64d76564619a7d8dd4dd6))
+* **env:** clean up feature from secrets rewrite ([223dda2](https://github.com/rtk-ai/rtk/commit/223dda2996c061e93605d996a14d454a56198ec4))
+* **git:** propagate exit code on git status failure in compact path ([d86f007](https://github.com/rtk-ai/rtk/commit/d86f0073ec294d75a705c49c95061bd2c09e2b18))
+* **git:** propagate exit code on git status failure in compact path ([756c2a4](https://github.com/rtk-ai/rtk/commit/756c2a4ce84424a17965810392b21c7320b12678))
+* **git:** propagate exit code on git worktree list failure ([9a52647](https://github.com/rtk-ai/rtk/commit/9a52647f6529120723a04e5323f2b38be5b22655))
+* **git:** propagate exit code on git worktree list failure ([ebaaf8d](https://github.com/rtk-ai/rtk/commit/ebaaf8db586a1a31904a122cd815242e183bd536))
+* **git:** propagate exit code when commit fails instead of reporting ok ([2927248](https://github.com/rtk-ai/rtk/commit/29272484de23b1cd1144d97ca6c334da1ee81a61))
+* **git:** propagate exit code when commit fails instead of reporting ok ([e36dd8c](https://github.com/rtk-ai/rtk/commit/e36dd8cbe7cf5f37b6c67115d6d53eccc90c94ab)), closes [#2494](https://github.com/rtk-ai/rtk/issues/2494)
+* **grep:** correctly handle all flag shapes and never exceed raw output ([ee9e2f8](https://github.com/rtk-ai/rtk/commit/ee9e2f8a2ad9618495dad0f10763f4891ae47be8))
+* **grep:** correctly handle all flag shapes and never exceed raw output ([0adfae6](https://github.com/rtk-ai/rtk/commit/0adfae6cf61a90a98a007a6ef4a8745ab6f42a31))
+* **grep:** left-to-right cluster scan, long value flags, format passthrough ([b7d93b5](https://github.com/rtk-ai/rtk/commit/b7d93b509e67eee46de3bb518e7ca71429188a4b))
+* **grep:** match real grep output and read piped stdin ([37ee6cf](https://github.com/rtk-ai/rtk/commit/37ee6cf6fa7ecb1b511aafd0b111b68ba1d5c945))
+* **grep:** restore strip_r as explicit testable helper + pre-existing clippy fix ([8d29f75](https://github.com/rtk-ai/rtk/commit/8d29f75833c9afe5eebdb5d6d1ce1743503421e7))
+* **grep:** run the invoked engine instead of substituting rg for grep ([eafadce](https://github.com/rtk-ai/rtk/commit/eafadcee0042411ab9d28339d865a626567a72b0))
+* **grep:** stabilize argument parsing — trailing_var_arg, -v invert-match, --version passthrough, safe rg invocation ([d8c550e](https://github.com/rtk-ai/rtk/commit/d8c550eefba41e112bd174d58844a803db6e432f))
+* **grep:** surface error on exit code &gt;= 2 instead of false "0 matches" ([d727db3](https://github.com/rtk-ai/rtk/commit/d727db3fa1f5b90d94cd8e1b893b6b10418b42bd)), closes [#2461](https://github.com/rtk-ai/rtk/issues/2461)
+* **grep:** surface the engine error and exit code, add nothing ([05f3c54](https://github.com/rtk-ai/rtk/commit/05f3c54886e6d39476b1e65275c599fe4dc470a3))
+* **grep:** use portable --null in system grep fallback (BSD/macOS) ([abe7d42](https://github.com/rtk-ai/rtk/commit/abe7d4210e0fe5c0b9322ec5210c6a6aadaa3db5))
+* **hook:** rewrite pytest under uv run ([c8722bd](https://github.com/rtk-ai/rtk/commit/c8722bd55e4441ac377b9c141c5f445e62fe9ecc))
+* **hook:** treat uv run as a transparent prefix ([34441dd](https://github.com/rtk-ai/rtk/commit/34441dd4648d5f73bf40988de0c9f2c839b3e988))
+* **pipe:** apply the never-worse guard ([9d9ad7c](https://github.com/rtk-ai/rtk/commit/9d9ad7cb177a1da22c4395dc6716fdf5e640a6f3))
+* **pulumi:** keep Owner and version in pulumi-stack filter ([5cfe4d5](https://github.com/rtk-ai/rtk/commit/5cfe4d5f87cecc7996cdbd837b7bf3dab2518a4e))
+* **pulumi:** keep stack identity in pulumi-stack filter ([1f6e36b](https://github.com/rtk-ai/rtk/commit/1f6e36b27ef4fd2237465c97a8e73fbe4e990f61))
+* **read:** make guard baseline faithful to cat/cat -n output ([9a2ad90](https://github.com/rtk-ai/rtk/commit/9a2ad90360b39ba8786f6056188ee9a939a9db28))
+* **tests:** resync & list oc as passthrough for test ([444f1c0](https://github.com/rtk-ai/rtk/commit/444f1c09082f8a9a843499980f89b8c0682ddfef))
+* **vitest:** add passthrough recovery hint ([f9469d1](https://github.com/rtk-ai/rtk/commit/f9469d12cfb48a6dda2b8c0578a7d5696804ae5f))
+* **vitest:** preserve explicit reporters ([e3f60e9](https://github.com/rtk-ai/rtk/commit/e3f60e982261cd4a488a9f4593c40b13738f5f35))
+
+## [0.42.4](https://github.com/rtk-ai/rtk/compare/v0.42.3...v0.42.4) (2026-06-12)
+
+
+### Bug Fixes
+
+* **aws:** preserve values in JSON output for unsupported subcommands ([9574007](https://github.com/rtk-ai/rtk/commit/9574007f77fa7051e93d10c512809e60ed61ac57))
+* **ci:** pin fixture line endings, harden CRLF tests ([be28a51](https://github.com/rtk-ai/rtk/commit/be28a511797fb5214ff0784f57f491d2b7dd0e71))
+* **curl:** passthrough binary downloads to prevent UTF-8 corruption ([#1087](https://github.com/rtk-ai/rtk/issues/1087)) ([35273c2](https://github.com/rtk-ai/rtk/commit/35273c2dc1c94dd93ba97555e72b4e46928574b6))
+* **filters:** remove max_lines cap from helm filter that truncates template output ([63a76de](https://github.com/rtk-ai/rtk/commit/63a76dedff245173a8e9240e09c741552f318de3))
+* **init:** respect CLAUDE_CONFIG_DIR for global paths ([05de9d3](https://github.com/rtk-ai/rtk/commit/05de9d366aff627f044e0a40daf5fcbcf277ea30)), closes [#633](https://github.com/rtk-ai/rtk/issues/633)
+* minor print_manual_instructions regression ([6785a6c](https://github.com/rtk-ai/rtk/commit/6785a6c7695d7273e722214a295249a84819b6f0))
+* **mvn:** re-arm failure trail on per-test sublines ([1050cfe](https://github.com/rtk-ai/rtk/commit/1050cfeadcc3fd2b34df3401c6ec3aa09f0cd199))
+* **mvn:** strip post-failure help boilerplate in non-quiet mode ([df76528](https://github.com/rtk-ai/rtk/commit/df76528dd36dba4a58163a4827d34fbb9e7c17ca))
+* **security:** harden installer checksum, filter-trust, meta-command ([769b6ce](https://github.com/rtk-ai/rtk/commit/769b6ce5a44ec696bf40d845a7fea35cdb5f7699))
+* **security:** harden installer checksum, filter-trust, meta-command fallthrough ([9cc4937](https://github.com/rtk-ai/rtk/commit/9cc4937dac3ba9aa27147699afe66a2842e7bffc))
+* **security:** harden meta command list check ([069a089](https://github.com/rtk-ai/rtk/commit/069a089c409193115b83fd27438d1bd73bf876b0))
+
+## [0.42.3](https://github.com/rtk-ai/rtk/compare/v0.42.2...v0.42.3) (2026-06-05)
+
+
+### Bug Fixes
+
+* **openclaw:** no execSync to avoid async dangerous cmds ([f525cee](https://github.com/rtk-ai/rtk/commit/f525ceecf4dbaa522d70b83ca36cac5992684a92))
+* **permissions:** &gt;&file redirect no allow + scope Gemini/Cursor config ([e16aa26](https://github.com/rtk-ai/rtk/commit/e16aa26162a95bd99c954c0236b5353ffe89db00))
+* **permissions:** add test for cursor and gemini settings perm ([1ccf6e3](https://github.com/rtk-ai/rtk/commit/1ccf6e3da72b6c2feff43bbc4d9fc3ed2e4cd083))
+* **permissions:** cursor and gemini use correct permissions settings file ([a4bb55e](https://github.com/rtk-ai/rtk/commit/a4bb55efa9be1b0bf69ccc2cff9ddcbf2af7a48d))
+* **permissions:** never auto-allow not evaluable + defer to the agent ([952245d](https://github.com/rtk-ai/rtk/commit/952245d39d099ed9a804dbba21bb0486f6aede16))
+* **permissions:** project-first config lookup for Gemini/Cursor ([f88b6be](https://github.com/rtk-ai/rtk/commit/f88b6bec1323265cfced77c449bd795f2506cc90))
+* **security:** port permission hardening from master + Copilot CLI adaptation ([e1cd274](https://github.com/rtk-ai/rtk/commit/e1cd274ab9f3d473b694547e511e5baf1eae9734))
+* semgrep markers on test-fixture sensitive paths ([66d66b1](https://github.com/rtk-ai/rtk/commit/66d66b1fe6293e0f93d9797ae04e72b7ca40eaa0))
+
+## [0.42.2](https://github.com/rtk-ai/rtk/compare/v0.42.1...v0.42.2) (2026-06-05)
+
+
+### Bug Fixes
+
+* **permissions:** &gt;&file redirect no allow + scope Gemini/Cursor config ([ce36297](https://github.com/rtk-ai/rtk/commit/ce362970e5752bacfd3a356c7fa122fea94ff0b2))
+* **permissions:** add test for cursor and gemini settings perm ([f181184](https://github.com/rtk-ai/rtk/commit/f181184b4017d71aa7f557148a2d7f1b872ab6d2))
+* **permissions:** cursor and gemini use correct permissions settings file ([6ab149b](https://github.com/rtk-ai/rtk/commit/6ab149ba3e41bb41b99794ef55d384c9be96b91b))
+* **permissions:** never auto-allow not evaluable + defer to the agent ([cdcdb68](https://github.com/rtk-ai/rtk/commit/cdcdb6863a3df709603dbed0a6205bf16e4e635f))
+* **permissions:** never auto-allow not evaluable cmds, defer to hosts ([e1bc0bd](https://github.com/rtk-ai/rtk/commit/e1bc0bd9d0e52d98323714a3b163c359d6a240d2))
+* **permissions:** project-first config lookup for Gemini/Cursor ([084fa84](https://github.com/rtk-ai/rtk/commit/084fa84e9a58387b5d77ca68db8731d361a89f2b))
+
+## [0.42.1](https://github.com/rtk-ai/rtk/compare/v0.42.0...v0.42.1) (2026-06-03)
+
+
+### Bug Fixes
+
+* **openclaw:** no execSync to avoid async dangerous cmds ([1bb17f4](https://github.com/rtk-ai/rtk/commit/1bb17f4fd18ef9470ba5a0c1341a35b26819da39))
+
+## [0.42.0](https://github.com/rtk-ai/rtk/compare/v0.41.0...v0.42.0) (2026-05-24)
+
+
+### Features
+
+* **hook:** add pi support ([805caf7](https://github.com/rtk-ai/rtk/commit/805caf7d069e93370a316682b36aad59d562de2e))
+
+
+### Bug Fixes
+
+* honor explicit -n N limit for git log on merge commits ([26c8890](https://github.com/rtk-ai/rtk/commit/26c88907d945ec81a25fe631a39dee3830faa0ec))
+
+## [0.41.0](https://github.com/rtk-ai/rtk/compare/v0.40.0...v0.41.0) (2026-05-22)
+
+
+### Features
+
+* **hints:** add tail hints for tee & hints + address reviews ([46fe7c4](https://github.com/rtk-ai/rtk/commit/46fe7c47293fcbef28159ddc9fcd118a344cc42b))
+
+
+### Bug Fixes
+
+* '...' ascii to unicode, remove some comments ([3571d52](https://github.com/rtk-ai/rtk/commit/3571d5293dc463c2a0aadfa9a5587b18478ca99a))
+* **docker:** forward --tail flag in compose logs ([5f1d8b0](https://github.com/rtk-ai/rtk/commit/5f1d8b0e14f0a0f82cd139443a80e680249c3137))
+* **docker:** forward --tail flag in compose logs ([b70b0fe](https://github.com/rtk-ai/rtk/commit/b70b0feec680356db81561d3920a3a9373dd43d8))
+* **filters:** add test for aggressive filter batch fix ([f6b28c2](https://github.com/rtk-ai/rtk/commit/f6b28c292b517d55733ad1d3868f320b017901a5))
+* **filters:** address adversarial test-suite findings on aggressive filtering ([62fc0e0](https://github.com/rtk-ai/rtk/commit/62fc0e0d2159e82aaa8c36a18d69ca569a1ce0b5))
+* **filters:** aggresivity batch fix ([90c285c](https://github.com/rtk-ai/rtk/commit/90c285c38057a552f3e2ea8459fe82d715a9dd17))
+* **filters:** split docker ps/-a paths, cap ruff violations at 50 ([f21b864](https://github.com/rtk-ai/rtk/commit/f21b8642dea5ac37ade5308bcf443315d63665e8))
+* **git:** drop -uall from compact status so output never exceeds raw ([06476d1](https://github.com/rtk-ai/rtk/commit/06476d17cbd49a8a6d06beae9b4a9f0cb9f96f00))
+* **git:** drop -uall from compact status so output never exceeds raw ([7753e48](https://github.com/rtk-ai/rtk/commit/7753e487b3595886d39492be9b43ecad26c826ca))
+* **git:** preserve full status paths and untracked files ([3ba1634](https://github.com/rtk-ai/rtk/commit/3ba1634555c0b9818560c4f512af916620946181))
+* **git:** stream push output to avoid spurious 30s timeout ([#963](https://github.com/rtk-ai/rtk/issues/963)) ([d6c5647](https://github.com/rtk-ai/rtk/commit/d6c56475e818b52b89906baf3a6631aaa506a4c8))
+* **git:** stream push output via FilterMode::Streaming ([#963](https://github.com/rtk-ai/rtk/issues/963)) ([be51783](https://github.com/rtk-ai/rtk/commit/be5178377fd7c155f70fda94dd134aa5a7b9361d))
+* **hooks/init:** preserve user content in copilot-instructions.md ([a04aa7e](https://github.com/rtk-ai/rtk/commit/a04aa7e848a28bf5115bfb1d6b706fbff21ea112))
+* **hooks/init:** preserve user content in copilot-instructions.md ([d108165](https://github.com/rtk-ai/rtk/commit/d10816516b4c199b06af18278ab53c76d26c2d87))
+* **install:** reject archive with path traversal before extraction ([#1250](https://github.com/rtk-ai/rtk/issues/1250)) ([e827184](https://github.com/rtk-ai/rtk/commit/e8271848d7d6b0d34c2ba5c2c3783ddc48247546))
+* **kubectl:** compact get pods and services aliases ([2dd0ec9](https://github.com/rtk-ai/rtk/commit/2dd0ec91ab11feea13f5c40755f337208dcb3f7e))
+* **kubectl:** compact get pods and services aliases ([b8172e5](https://github.com/rtk-ai/rtk/commit/b8172e5b1de2fd3a27d992ffba484f01b47d84d4))
+* re-add env python as noisy dir ([4eefe2f](https://github.com/rtk-ai/rtk/commit/4eefe2f225ea512a2f1bf800dd20c09994721108))
+* **rust:** multi-line blocks used with tail hint ([4960630](https://github.com/rtk-ai/rtk/commit/49606303d6738525c250149230752fb6133383d1))
+* **tee:** safe truncation caps and compose-ps tee content fix ([548e4dd](https://github.com/rtk-ai/rtk/commit/548e4dd995d5de6e52d7c8e7bb0a0f81fa2c0328))
+* **tee:** safe truncation caps and tee/hint coverage ([15a0d2e](https://github.com/rtk-ai/rtk/commit/15a0d2e7d6e3f33442675f502ed8bc868710dfd6))
+* **truncate:** global caps reduce (avoid underflow and 0 results) ([d5a1731](https://github.com/rtk-ai/rtk/commit/d5a17315c52487be2d043e0058a4f7d91ec3d2bc))
+
+## [0.40.0](https://github.com/rtk-ai/rtk/compare/v0.39.0...v0.40.0) (2026-05-13)
+
+
+### Features
+
+* **gradlew:** Gradle support for Android/Kotlin developers ([833026b](https://github.com/rtk-ai/rtk/commit/833026b893822be4e1c64d22d640e979cd9eff51))
+* **hermes:** add Hermes Agent support via rtk init --agent hermes ([55f998d](https://github.com/rtk-ai/rtk/commit/55f998d08cd80ece970fe5e61eaae3533512288b))
+* **hermes:** add rtk integration ([9d3b99d](https://github.com/rtk-ai/rtk/commit/9d3b99dec8516fd32071d151306b5bb6fd4d06e3))
+* **hooks:** add transparent_prefixes config for wrapper commands ([998f1ee](https://github.com/rtk-ai/rtk/commit/998f1ee0a3cf8d73ea0d6d87c121117f351e4992))
+* **init:** add --dry-run flag to preview changes without writing ([172ec54](https://github.com/rtk-ai/rtk/commit/172ec54580ddb0d737ef3e3be8a075eaeeb0a01b))
+
+
+### Bug Fixes
+
+* **cicd:** pr-target clean msg + git app token ([e4c3ed7](https://github.com/rtk-ai/rtk/commit/e4c3ed7d889ede726df7986ade94a4714c7c7f99))
+* **cicd:** pr-target clean msg + git app token ([4ebda52](https://github.com/rtk-ai/rtk/commit/4ebda52f5ab898f9c0e8c610cc51b36a63e6eefa))
+* **cicd:** set release-please target-branch to master [skip ci] ([0c6a838](https://github.com/rtk-ai/rtk/commit/0c6a838594e87346b67bd13c092b8a46a783af87))
+* correct ARCHITECTURE.md path in README links ([2a41e03](https://github.com/rtk-ai/rtk/commit/2a41e039903049543aa6c69482747eddcce9ee5a))
+* correct ARCHITECTURE.md path in README links ([f2da381](https://github.com/rtk-ai/rtk/commit/f2da381ae2353d31dd7252af6c868c56f6aa3db8))
+* don't inject -json for go test -bench runs ([380a7c9](https://github.com/rtk-ai/rtk/commit/380a7c9f1189fafe7d0b878b3821a720ac6ab4b2))
+* don't inject -json for go test -bench runs ([b058c96](https://github.com/rtk-ai/rtk/commit/b058c960f48535227cdec93392a70ee84f3cd2ee)), closes [#1609](https://github.com/rtk-ai/rtk/issues/1609)
+* **dotnet:** 🐛 format build/test/restore output sections ([106305b](https://github.com/rtk-ai/rtk/commit/106305b1978ad5fdd47139d3543cfa53a5e8172e))
+* **dotnet:** 🐛 format build/test/restore output summaries ([271bc53](https://github.com/rtk-ai/rtk/commit/271bc53f35c23b39dc42002e8eb3032557f845ec))
+* **dotnet:** 🐛 format warnings section in build/test/restore outputs ([c5245d7](https://github.com/rtk-ai/rtk/commit/c5245d74fafc066072615d804c27d5c2892db7d9))
+* **dotnet:** move build/test/restore status line to the bottom ([ed161b0](https://github.com/rtk-ai/rtk/commit/ed161b0a33a2a784bb933792501aa2747b0df3c3)), closes [#1574](https://github.com/rtk-ai/rtk/issues/1574)
+* **gradlew:** use resolved_command for system gradle fallback ([9e3a5ae](https://github.com/rtk-ai/rtk/commit/9e3a5ae68d4adc3d7fc374f36235cb5164e6efc8))
+* **hooks:** address transparent prefix review ([fdf0ed0](https://github.com/rtk-ai/rtk/commit/fdf0ed0b597f1ebdc96a2793df2725a1e62bc65c))
+* **hooks:** address transparent prefix review comments ([041de2b](https://github.com/rtk-ai/rtk/commit/041de2b6baa6a27af7d9b429d807fbe887780c90))
+* **hooks:** compose env and transparent prefixes ([b234bc6](https://github.com/rtk-ai/rtk/commit/b234bc6db1ab301334412409a4cfd67fe99c58f0))
+* **hooks:** make Cursor preToolUse rewrites work and stay visible ([2d6e10a](https://github.com/rtk-ai/rtk/commit/2d6e10a923d18e022f5fdc4ed9b69ae0d43b2f79))
+* **hooks:** make Cursor preToolUse rewrites work and stay visible ([f00977a](https://github.com/rtk-ai/rtk/commit/f00977aa338ce6bafe8df69c271679951310b045))
+* minor code cleanup, avoid duplicating logic ([20cac8a](https://github.com/rtk-ai/rtk/commit/20cac8a4e7c2b7e0e2675dbcab4fbd0fb1ad79ed))
+* new rewite_command test call after rebase ([5cfb8e1](https://github.com/rtk-ai/rtk/commit/5cfb8e1d2bdf85d60633868cb420aba9a7b923f4))
+* resolve merge conflict artifacts in init.rs ([4830d50](https://github.com/rtk-ai/rtk/commit/4830d50f6e3ad7adbd24ba11f3e392869723a020))
+* **security:** pin workflow actions to SHA, clean up tempfile on failure ([26b96ec](https://github.com/rtk-ai/rtk/commit/26b96ec6c4f40f992ccffa190af9a4de8d7636b1))
+* **security:** replace insecure tmp, lock git perm, set sha for actions ([54d1f87](https://github.com/rtk-ai/rtk/commit/54d1f8736f4acdd0667eb86c81d0e4c7843306f4))
+* **security:** replace insecure tmp, lock git workflow perm ([cd6ac2f](https://github.com/rtk-ai/rtk/commit/cd6ac2f47a008c6dca04b567faf68aaedfd87ca9))
+
+## [0.39.0](https://github.com/rtk-ai/rtk/compare/v0.38.0...v0.39.0) (2026-05-06)
+
+
+### Features
+
+* **cicd:** add auto next release parser ([bf24972](https://github.com/rtk-ai/rtk/commit/bf24972e7d463f0432b8315e3035e9eb13ff062f))
+* **cicd:** target develop branch ([63da7da](https://github.com/rtk-ai/rtk/commit/63da7dafd61b5f65115989aeda01f666a64457ff))
+
+
+### Bug Fixes
+
+* **cicd:** match ":" for body prefix to catch ([5987333](https://github.com/rtk-ai/rtk/commit/5987333209cd59c1e22f9e0b247ab390cb431dbf))
+* **cicd:** match allowed repo list in pr bodies ([b1233ab](https://github.com/rtk-ai/rtk/commit/b1233ab3fbc0927145d5c0f763725b098fc7dd99))
+* **curl:** gate force_tee_hint, extend JSON heuristic, avoid full-body alloc ([2ed53c7](https://github.com/rtk-ai/rtk/commit/2ed53c7fa26922860af20c445b39cbb66862f180))
+* **curl:** JSON passthrough + IsTerminal gate to prevent invalid JSON output ([02da3d0](https://github.com/rtk-ai/rtk/commit/02da3d070271f800731a94a3249f3feb9dd7c7b8)), closes [#1536](https://github.com/rtk-ai/rtk/issues/1536) [#1282](https://github.com/rtk-ai/rtk/issues/1282)
+* dotnet cmd test flakiness ([17ffe62](https://github.com/rtk-ai/rtk/commit/17ffe624d415f05ca4c29e97ca650594778231be))
+* **git:** address review feedback on status state surfacing ([316e65e](https://github.com/rtk-ai/rtk/commit/316e65ef5baa6b926725b8d9a08c8d2ab52c159d))
+* **git:** compact in-progress status state ([cff391e](https://github.com/rtk-ai/rtk/commit/cff391e50b5fa89ae83eed5fd4274c7c444d37f0))
+* **git:** drop state-hint extraction in compact status ([e91dee5](https://github.com/rtk-ai/rtk/commit/e91dee568bdcca0933b137edccc077db9ff006fa))
+* **git:** surface in-progress state in compact `rtk git status` ([017d0f9](https://github.com/rtk-ai/rtk/commit/017d0f9ee6bb799717958d9f3fd3eee4b0e6ca3c))
+* **grep:** adjust the command to fall through if the output would already be as small as possible ([09e1c0a](https://github.com/rtk-ai/rtk/commit/09e1c0ad4b474631b8e058ce69ca2bbd46484c7f))
+* head/tail multi-file rewrite falls back to native command ([#1362](https://github.com/rtk-ai/rtk/issues/1362)) ([f75a10b](https://github.com/rtk-ai/rtk/commit/f75a10b1a2bd824814247a03bded76fa49ddf663))
+* **init-uninstall:** uninstall removes --claude-md artifacts on Windows ([d395f97](https://github.com/rtk-ai/rtk/commit/d395f975c3db7e1cbc825006091e1dcc3867844d))
+* **init-uninstall:** uninstall removes --claude-md artifacts on Windows ([aad0db8](https://github.com/rtk-ai/rtk/commit/aad0db8b5213bd0940ca05f684ecda87de0d93af))
+* **json:** expand char boundary truncation test ([7840030](https://github.com/rtk-ai/rtk/commit/784003055e85b5e6a51f69c2ce0b10662f1b36af))
+* **json:** use char boundary when truncating long string values ([533894a](https://github.com/rtk-ai/rtk/commit/533894a77ec5b8f7374547e994124bcf3a730f0b))
+* **ls:** handle all file types (device, pipe, socket) in ls filter ([e456be1](https://github.com/rtk-ai/rtk/commit/e456be1c1674a32839694446504310a2c16ce7dd))
+* **ls:** handle device files (block, char, pipe, socket) in ls filter ([cac8ce7](https://github.com/rtk-ai/rtk/commit/cac8ce775b695c5837b36ea788ba6812bcae214d)), closes [#844](https://github.com/rtk-ai/rtk/issues/844)
+* **ls:** LC_ALL=C + fallback to raw on unrecognized locale ([bf6d4b2](https://github.com/rtk-ai/rtk/commit/bf6d4b2ea22f026d3ec4d909aef81156b0436509))
+* **pnpm:** install don't take a list of packages ([492aa76](https://github.com/rtk-ai/rtk/commit/492aa76ed3842549d2a453becbf2782caba765f1))
+
+## [0.38.0](https://github.com/rtk-ai/rtk/compare/v0.37.2...v0.38.0) (2026-04-29)
+
+
+### Features
+
+* **cicd:** enforce cicd sast & package check ([3bbbb49](https://github.com/rtk-ai/rtk/commit/3bbbb492f33f0e619ab0d1dbce4389ad49e763ae))
+* **gains:** add --reset flag ([e3149cb](https://github.com/rtk-ai/rtk/commit/e3149cb7fbed18eae95f753664ddd8eaaaf6cc39))
+* **glab:** add GitLab CLI (glab) command support ([048f2f9](https://github.com/rtk-ai/rtk/commit/048f2f980bd95c5918f309d1d7ebc096d196f00d))
+* **glab:** add GitLab CLI (glab) command support ([bc31f3f](https://github.com/rtk-ai/rtk/commit/bc31f3f0f39077884e8d52c3508e840b355f682e)), closes [#851](https://github.com/rtk-ai/rtk/issues/851)
+
+
+### Bug Fixes
+
+* **benchmark:** benchmark capture all fd only stream ([c590bd6](https://github.com/rtk-ai/rtk/commit/c590bd69329bb82608666958c7e06bf169a7d577))
+* **benchmark:** capture all fd for stream cmd benchmark ([e6c2523](https://github.com/rtk-ai/rtk/commit/e6c2523be1180772e40c175e2f9a523d349fb13d))
+* **benchmark:** extract format_diff_changes + remove wrong diff test ([e7ae6bf](https://github.com/rtk-ai/rtk/commit/e7ae6bf018882dba248f151ba4ec4929300b3e36))
+* **cicd:** : no semgrep alert on sh call cicd ([7681daf](https://github.com/rtk-ai/rtk/commit/7681dafc76f164cfad588fe37d9a165dcb476e10))
+* **discover:** also encode '_', '\', and non-ASCII chars in project path slug ([73a05c3](https://github.com/rtk-ai/rtk/commit/73a05c3262b6410cb24370d939c428d1dc0c7a77)), closes [#1457](https://github.com/rtk-ai/rtk/issues/1457)
+* **discover:** encode '.' as '-' in project path slug ([2d031f3](https://github.com/rtk-ai/rtk/commit/2d031f32e9ad4452c2cc229c030ea6c0936c8bec)), closes [#1457](https://github.com/rtk-ai/rtk/issues/1457)
+* **filters:** benchmark ci update + fix stream + filter quality ([137af04](https://github.com/rtk-ai/rtk/commit/137af0493189a86020da1feaa1de74df92466137))
+* **filters:** benchmark ci update + fix stream filter quality ([88d9f6a](https://github.com/rtk-ai/rtk/commit/88d9f6a0d94fd2b5b3d40c956e966756670a2704))
+* **git:** fix empty output when branch name contains '/' in git diff ([e070226](https://github.com/rtk-ai/rtk/commit/e0702260a94377b6bbec5cb79d91d81cba17b0ec))
+* **git:** fix empty output when branch name contains '/' in git diff ([13188a8](https://github.com/rtk-ai/rtk/commit/13188a88b22f692157b89874f4c76287a0b3ecae)), closes [#1431](https://github.com/rtk-ai/rtk/issues/1431)
+* grep false negatives, output mangling, and truncation annotations ([de41533](https://github.com/rtk-ai/rtk/commit/de415335ea069c06370855366945a3704579ee18))
+* **install:** resolve version via redirect to avoid GitHub API rate limits ([5e1a641](https://github.com/rtk-ai/rtk/commit/5e1a64180f094ae456780a78b675f243312089c6))
+* **npm:** regex match end line ([5e84e94](https://github.com/rtk-ai/rtk/commit/5e84e9471736fe58e89094854f4123ecb07c2d3b))
+* **npx:** dispatch unknown tools to npx instead of npm ([2c4569c](https://github.com/rtk-ai/rtk/commit/2c4569caa64d013ad4ada0b7580f9f16d8334c19)), closes [#815](https://github.com/rtk-ai/rtk/issues/815)
+* remove wrong cicd benchmark + npm test regex ([7e3690a](https://github.com/rtk-ai/rtk/commit/7e3690a23ab158ca8e1e890650554e20e3a0c17b))
+* **stream:** add semgrep flag for sh tests ([7cfcdbe](https://github.com/rtk-ai/rtk/commit/7cfcdbec8681b15b794b6aef982ccb38feb79fd7))
+* **stream:** add semgrep flag for sh tests ([d327724](https://github.com/rtk-ai/rtk/commit/d327724f814b6875903366db0b0616780b454ad1))
+* **stream:** route to respective fd ([605e335](https://github.com/rtk-ai/rtk/commit/605e335f0546d2ed8554a95e7749a0b494c510e3))
+* **stream:** route to respective fd ([81a1be6](https://github.com/rtk-ai/rtk/commit/81a1be6a744942515347dd296ddcf7d9f126200d))
+* **tracking:** test env path ([70b36b4](https://github.com/rtk-ai/rtk/commit/70b36b4dbc3e147219ad87cf539d073523b86a85))
+
+## [0.37.2](https://github.com/rtk-ai/rtk/compare/v0.37.1...v0.37.2) (2026-04-20)
+
+
+### Bug Fixes
+
+* **discover:** exclude_commands bypass for env-prefix, sub cmd + regex ([ca4c59c](https://github.com/rtk-ai/rtk/commit/ca4c59c230306d310069bed3c0ba930068dc4dc4))
+* **discover:** exclude_commands bypass for env-prefix, sub cmd + regex ([42d3161](https://github.com/rtk-ai/rtk/commit/42d3161872713bc0b20ef49b0714add40c40d5e3))
+* **discover:** word boundary in exclude_commands ([0ea115b](https://github.com/rtk-ai/rtk/commit/0ea115bca5fa66daa69fda2f0eeaaf103346b3a4))
+* **docs:** add missing docs for exclude commands patterns ([2e401ac](https://github.com/rtk-ai/rtk/commit/2e401ac38feec88de8d5e46f0301c8a532b95614))
+* **hooks:** add regression test for windows native ([115e448](https://github.com/rtk-ai/rtk/commit/115e44853b8cdd2d7af3af2b52c9c31e924a45d3))
+* **hooks:** windows use 'rtk hook claude' no fallback ([da3c432](https://github.com/rtk-ai/rtk/commit/da3c432201240f0da9627d8cc6bc70e5b7f8bdfe))
+* **hooks:** windows use 'rtk hook claude' no fallback ([0e29650](https://github.com/rtk-ai/rtk/commit/0e29650e11959730f4c4a2e6d6c0519e14dc8595))
+* **tests:** windows regression test fix path ([13a73dd](https://github.com/rtk-ai/rtk/commit/13a73ddfd78460560a1f5fde94b54b1f848b41b5))
+
+## [0.37.1](https://github.com/rtk-ai/rtk/compare/v0.37.0...v0.37.1) (2026-04-18)
+
+
+### Bug Fixes
+
+* **docs:** user facing docs ([c8d6878](https://github.com/rtk-ai/rtk/commit/c8d68787fb8b31c52125e9fc7ea62e0aa590485f))
+
+## [0.37.0](https://github.com/rtk-ai/rtk/compare/v0.36.0...v0.37.0) (2026-04-17)
+
+
+### Features
+
+* **discover:** handle more npm/npx/pnpm/pnpx patterns ([9e96caa](https://github.com/rtk-ai/rtk/commit/9e96caa0a18a95c84da82ba57716a9d3ef86d0c8))
+* **refacto-core:** binary hook w/ native cmd exec + streaming ([e7b7f9a](https://github.com/rtk-ai/rtk/commit/e7b7f9ab665a0f7303d41d23ad156d24e5e8964e))
+
+
+### Bug Fixes
+
+* **docs:** use release please changelog no manual ([7591a14](https://github.com/rtk-ai/rtk/commit/7591a14e4ceb732ab7ca160ac01a852926abe77a))
+* isolate cursor hook tests from local settings (determinist) ([d8ddefe](https://github.com/rtk-ai/rtk/commit/d8ddefe78efe25c35bb2a2f9083f2eacb9dd7274))
+* P0+P1 fixes from pre-merge review of hook engine ([df8e035](https://github.com/rtk-ai/rtk/commit/df8e03558d4d6cc2f5cbac91c63ab1b3b51d3bcd))
+* P0+P1 fixes from pre-merge review of hook engine ([d34389c](https://github.com/rtk-ai/rtk/commit/d34389c3d0936c2b0790e14f450bb50a28a7edf7))
+* rename ship.md to ship/SKILL.md to match develop ([5916ecd](https://github.com/rtk-ai/rtk/commit/5916ecd86fb319c2519a0b4fb2891309833a3bb4))
+* **runner:** preserve fd separation on command failure ([e92d099](https://github.com/rtk-ai/rtk/commit/e92d0993c93f0b732316dfa932d265aeca7488d6))
+* **stream:** missing stderr fields ([a1d46f3](https://github.com/rtk-ai/rtk/commit/a1d46f39c291e3356b9c26a062bde05ba1de591a))
+
+## [0.36.0](https://github.com/rtk-ai/rtk/compare/v0.35.0...v0.36.0) (2026-04-13)
+
+
+### Features
+
+* **benchmark:** add multipass VM integration test suite ([6e7863b](https://github.com/rtk-ai/rtk/commit/6e7863bf313b0d18a47cf0ca2cdaea03cc2ed900))
+* **benchmark:** add multipass VM integration test suite ([d22759b](https://github.com/rtk-ai/rtk/commit/d22759b8c5254ad9c4a455f10cb7de75e92df581))
+* **benchmark:** add Swift ecosystem tests (6 commands + savings) ([1fbb6d9](https://github.com/rtk-ai/rtk/commit/1fbb6d935b4a0d031a7862cba312eebe1303ba9b))
+* **init:** add native support for Kilo Code and Google Antigravity ([d0a3797](https://github.com/rtk-ai/rtk/commit/d0a3797ec580f96948489d1e7c3329ac22a6c4eb))
+* **init:** add support for kilocode and antigravity agents ([66b90f1](https://github.com/rtk-ai/rtk/commit/66b90f1ed3de81acdce61164c068c24ed7ef29db))
+* **pnpm:** Add filter argument support ([2ba8d37](https://github.com/rtk-ai/rtk/commit/2ba8d372df186b4056a3b8906fc25cde8586dd42))
+* **skills:** add /pr-review skill for batch PR review ([21e67a1](https://github.com/rtk-ai/rtk/commit/21e67a1113041b74542d0285e5f74587dfb30b65))
+* **telemetry:** enrich daily ping with gap detection and quality metrics ([644c50f](https://github.com/rtk-ai/rtk/commit/644c50f786e5c567617e7ea907c5f312797b1265))
+
+
+### Bug Fixes
+
+* **benchmark:** address PR review feedback ([87ee81f](https://github.com/rtk-ai/rtk/commit/87ee81f08be5e7b1ca79513b1a91925d455f4f5c))
+* **benchmark:** address review feedback from @FlorianBruniaux ([d13c185](https://github.com/rtk-ai/rtk/commit/d13c185aac64d14288b574df44623723a69e7b95))
+* **ccusage:** add --yes flag and warn when falling back to npx ([f68fa00](https://github.com/rtk-ai/rtk/commit/f68fa0087c03d6882993b7b3eaee98e1dbab41b4))
+* **clippy:** show full error blocks instead of truncated headline ([95d9d13](https://github.com/rtk-ai/rtk/commit/95d9d134b0b76d83b6162614b0a79269b2135f40))
+* **clippy:** show full error blocks instead of truncated headline ([f4074f8](https://github.com/rtk-ai/rtk/commit/f4074f898a9b73b72bbcd8b18afab4831dcda406)), closes [#602](https://github.com/rtk-ai/rtk/issues/602)
+* **curl:** skip JSON schema conversion for internal/localhost URLs ([577c311](https://github.com/rtk-ai/rtk/commit/577c311ecaaa8ae94f22dbe252152424d4333d04))
+* **discover:** preserve golangci-lint flags in rewrite ([d85303e](https://github.com/rtk-ai/rtk/commit/d85303ec4893deb904260f5dc11b7df906a50c07))
+* **docs:** update TELEMETRY.md to match code after review fixes ([be5c057](https://github.com/rtk-ai/rtk/commit/be5c0576d95566f37f266fd9f92e2a1b263697bd))
+* **find:** include hidden files when pattern targets dotfiles ([#1101](https://github.com/rtk-ai/rtk/issues/1101)) ([dbeeaed](https://github.com/rtk-ai/rtk/commit/dbeeaed16aee79674ec2fd3778b7b11b10b847c6))
+* **git:** re-insert -- separator when clap consumes it from git diff args ([#1215](https://github.com/rtk-ai/rtk/issues/1215)) ([9979c69](https://github.com/rtk-ai/rtk/commit/9979c699307a4adad2c2df0f2bc3b663df653311))
+* **git:** remove -u short alias from --ultra-compact to fix git push -u ([6b76fdb](https://github.com/rtk-ai/rtk/commit/6b76fdb87d7c54cfc2a1b0e6117dd78b8430910b))
+* **golangci-lint:** restore run wrapper and align guidance ([4f4e4d2](https://github.com/rtk-ai/rtk/commit/4f4e4d2b5a3529030fe4089f60d2f4b8740b5d53))
+* **golangci-lint:** support inline global flags before run ([24f2ada](https://github.com/rtk-ai/rtk/commit/24f2adaf8fb541c2564fa7dfb423947932e68fb4))
+* **go:** prevent double-counted failures when test-level fail also triggers package-level fail ([#958](https://github.com/rtk-ai/rtk/issues/958)) ([4fc15ef](https://github.com/rtk-ai/rtk/commit/4fc15ef2c1c80336ffaafa4179db4cee6f39236a))
+* **go:** prevent double-counting failures when package-level fail cascades from test failures ([#958](https://github.com/rtk-ai/rtk/issues/958)) ([9722d5e](https://github.com/rtk-ai/rtk/commit/9722d5ebd8916f9b398bdc01b1102d42ab2b8795))
+* **hooks:** ensure default permission verdict prompts user for confirmation ([40462c0](https://github.com/rtk-ai/rtk/commit/40462c05e66f116928de365a0d271bdfd61cec72))
+* **hooks:** require all segments to match allow rules ([#1213](https://github.com/rtk-ai/rtk/issues/1213)) ([40c9dbc](https://github.com/rtk-ai/rtk/commit/40c9dbc7dbbf9332d6859060765c582a880f0fde))
+* **init:** honor CODEX_HOME for Codex global paths ([d442799](https://github.com/rtk-ai/rtk/commit/d442799e34d522c87a6eb60c2ff373385d201315))
+* **init:** install Codex global instructions in CODEX_HOME ([a257688](https://github.com/rtk-ai/rtk/commit/a2576883a27c5f915ba0ae7883a51006411b3ae5))
+* **json:** rename --schema to --keys-only, closes [#621](https://github.com/rtk-ai/rtk/issues/621) ([c16713a](https://github.com/rtk-ai/rtk/commit/c16713a973b563a6cba283c830b67c8c470e419f))
+* **ls:** filter quality wrong truncation ([aa6317f](https://github.com/rtk-ai/rtk/commit/aa6317fb83a5d9883623a4d3bee7a25bc99dcb4c))
+* **permissions:** glob_matches middle-wildcard matches commands without trailing args ([#1105](https://github.com/rtk-ai/rtk/issues/1105)) ([3db8070](https://github.com/rtk-ai/rtk/commit/3db8070b51b9a312fcca20a8460d3d6259cc38b7))
+* **pnpm:** list command not working ([ba235d8](https://github.com/rtk-ai/rtk/commit/ba235d85974c0a85b25e290a8bb83648800438a6))
+* **pytest:** -q mode summary line not detected ([57502a5](https://github.com/rtk-ai/rtk/commit/57502a5bef1fb56109a57cf2ea7377fd271253a7))
+* report package-level failures (timeouts, signals) in go test summary ([0b1c32b](https://github.com/rtk-ai/rtk/commit/0b1c32b3cc9a3e73418d401d1d481c1611c7ec0b))
+* report package-level failures (timeouts, signals) in go test summary ([c85a387](https://github.com/rtk-ai/rtk/commit/c85a387363e2079234b6141aad26418172c0e61a)), closes [#958](https://github.com/rtk-ai/rtk/issues/958)
+* **security:** correct email domain from .dev to .app ([47383e8](https://github.com/rtk-ai/rtk/commit/47383e80197fc56e38f880f33a6b54261b82523c))
+* **tee:** prevent panic on UTF-8 multi-byte truncation boundary ([da486bf](https://github.com/rtk-ai/rtk/commit/da486bf394330c804cd1cd12e4b6835f18de5205))
+* **telemetry:** 7 bugs in enrichment — privacy leak, broken meta_usage, pricing ([15f666d](https://github.com/rtk-ai/rtk/commit/15f666dd8dbd18648cb7bd14a6f9f3cac2f7d10b))
+* **telemetry:** clean code ([8156081](https://github.com/rtk-ai/rtk/commit/81560812610686fa5ca3633c2bf0b79c05eaa7d9))
+* **telemetry:** consent, erasure, auth, docs ([2e4cc4b](https://github.com/rtk-ai/rtk/commit/2e4cc4bb5226444c8c0bfc827baf0c101c3759e8))
+* **telemetry:** non-terminal consent, single config load ([7821e98](https://github.com/rtk-ai/rtk/commit/7821e9872fd1f1ae9b40eb8a4458049869acc36b))
+* **telemetry:** RGPD-compliant, consent gate, erasure, privacy controls ([6a5bc84](https://github.com/rtk-ai/rtk/commit/6a5bc847e06cf6066e6f4aeed5a3ad0803a3649b))
+
+## [0.35.0](https://github.com/rtk-ai/rtk/compare/v0.34.3...v0.35.0) (2026-04-06)
+
+
+### Features
+
+* **aws:** expand CLI filters from 8 to 25 subcommands ([402c48e](https://github.com/rtk-ai/rtk/commit/402c48e66988e638a5b4f4dd193238fc1d0fe18f))
+
+
+### Bug Fixes
+
+* **cmd:** read/cat multiple file and consistent behavior ([3f58018](https://github.com/rtk-ai/rtk/commit/3f58018f4af1d7206457929cf80bb4534203c3ee))
+* **docs:** clean some docs + disclaimer ([deda44f](https://github.com/rtk-ai/rtk/commit/deda44f73607981f3d27ecc6341ce927aab34d37))
+* **gh:** pass through gh pr merge instead of canned response ([#938](https://github.com/rtk-ai/rtk/issues/938)) ([8465ca9](https://github.com/rtk-ai/rtk/commit/8465ca953fa9d70dcc971a941c19465d456eb7d4))
+* **gh:** pass through gh pr merge instead of canned response ([#938](https://github.com/rtk-ai/rtk/issues/938)) ([e1f2845](https://github.com/rtk-ai/rtk/commit/e1f2845df06a8d8b8325945dc4940ec5f530e4cc))
+* **git:** inherit stdin for commit and push to preserve SSH signing ([#733](https://github.com/rtk-ai/rtk/issues/733)) ([eefeae4](https://github.com/rtk-ai/rtk/commit/eefeae45656ff2607c3f519c8eae235e3f0fe411))
+* **git:** inherit stdin for commit and push to preserve SSH signing ([#733](https://github.com/rtk-ai/rtk/issues/733)) ([6cee6c6](https://github.com/rtk-ai/rtk/commit/6cee6c60b80f914ed9505e3925d85cadec43ab97))
+* **git:** preserve full diff hunk headers ([62f4452](https://github.com/rtk-ai/rtk/commit/62f445227679f3df293fe35e9b18cc5ab39d7963))
+* **git:** preserve full diff hunk headers ([09b3ff9](https://github.com/rtk-ai/rtk/commit/09b3ff9424e055f5fe25e535e5b60e077f8344f9))
+* **go:** avoid false build errors from download logs ([9c1cf2f](https://github.com/rtk-ai/rtk/commit/9c1cf2f403534fa7874638b1b983c2d7f918a185))
+* **go:** avoid false build errors from download logs ([d44fd3e](https://github.com/rtk-ai/rtk/commit/d44fd3e034208e3bcd59c2c46f7720eec4f10c98))
+* **go:** cover more build failure shapes ([2425ad6](https://github.com/rtk-ai/rtk/commit/2425ad68e5386d19e5ec9ff1ca151a6d2c9a56d3))
+* **go:** preserve failing test location context ([1481bc5](https://github.com/rtk-ai/rtk/commit/1481bc590924031456a6022510275c29c09e330e))
+* **go:** preserve failing test location context ([374fe64](https://github.com/rtk-ai/rtk/commit/374fe64cfbedcd676733973e81a63a6dfecbb1b7))
+* **go:** restore build error coverage ([1177c9c](https://github.com/rtk-ai/rtk/commit/1177c9c873ac63b6c0bcc9e1b664a705baa0ad7a))
+* **grep:** close subprocess stdin to prevent memory leak ([#897](https://github.com/rtk-ai/rtk/issues/897)) ([7217562](https://github.com/rtk-ai/rtk/commit/72175623551f40b581b4a7f6ed966c1e4a9c7358))
+* **grep:** close subprocess stdin to prevent memory leak ([#897](https://github.com/rtk-ai/rtk/issues/897)) ([09979cf](https://github.com/rtk-ai/rtk/commit/09979cf29701a1b775bcac761d24ec0e055d1bec))
+* **hook_check:** detect missing integrations ([9cf9ccc](https://github.com/rtk-ai/rtk/commit/9cf9ccc1ac39f8bba37e932c7d318a3aa7a34ae9))
+* **init:** remove opt-out instruction from telemetry message ([7571c8e](https://github.com/rtk-ai/rtk/commit/7571c8e101c41ee64c51e2bd64697f85f9142423))
+* **init:** remove telemetry info lines from init output ([7dbef2c](https://github.com/rtk-ai/rtk/commit/7dbef2ce00824d26f2057e4c3c76e429e2e23088))
+* **main:** kill zombie processes + path for rtk md ([d16fc6d](https://github.com/rtk-ai/rtk/commit/d16fc6dacbfec912c21522939b15b7bbd9719487))
+* **main:** kill zombie processes + path for rtk md + missing intergrations ([a919335](https://github.com/rtk-ai/rtk/commit/a919335519ed4a5259a212e56407cb312aa99bac))
+* **merge:** changelog conflicts ([d92c5d2](https://github.com/rtk-ai/rtk/commit/d92c5d264a49483c8d6079e04d946a79bc990a74))
+* **proxy:** kill child process on SIGINT/SIGTERM to prevent orphans ([d813919](https://github.com/rtk-ai/rtk/commit/d813919a24546e044e7844fc7ed05fef4ec24033))
+* **proxy:** kill child process on SIGINT/SIGTERM to prevent orphans ([3318510](https://github.com/rtk-ai/rtk/commit/33185101fc122d0c11a25a4e02ac9f3a7dc7e3bb))
+* **review:** address ChildGuard disarm, stdin dedup, hook masking ([d85fe33](https://github.com/rtk-ai/rtk/commit/d85fe3384b87c16fafd25ec7bcadbff6e69f3f1f))
+* **security:** default to ask when no permission rule matches ([#886](https://github.com/rtk-ai/rtk/issues/886)) ([158c745](https://github.com/rtk-ai/rtk/commit/158c74527f6591d372e40a78cd604d73a20649a9))
+* **security:** default to ask when no permission rule matches ([#886](https://github.com/rtk-ai/rtk/issues/886)) ([41a6c6b](https://github.com/rtk-ai/rtk/commit/41a6c6bf6da78a4754794fdc6a1469df2e327920))
+* **tracking:** use std::env::temp_dir() for compatibility (instead of unix tmp) ([e918661](https://github.com/rtk-ai/rtk/commit/e918661440d7b50321f0535032f52c5e87aaf3cb))
+
+## [Unreleased]
+
+### Bug Fixes
+
+* **git:** remove `-u` short alias from `--ultra-compact` to fix `git push -u` upstream tracking ([#1086](https://github.com/rtk-ai/rtk/issues/1086))
+
+## [0.35.0](https://github.com/rtk-ai/rtk/compare/v0.34.3...v0.35.0) (2026-04-06)
+
+
+### Features
+
+* **aws:** expand CLI filters from 8 to 25 subcommands ([402c48e](https://github.com/rtk-ai/rtk/commit/402c48e66988e638a5b4f4dd193238fc1d0fe18f))
+
+
+### Bug Fixes
+
+* **cmd:** read/cat multiple file and consistent behavior ([3f58018](https://github.com/rtk-ai/rtk/commit/3f58018f4af1d7206457929cf80bb4534203c3ee))
+* **docs:** clean some docs + disclaimer ([deda44f](https://github.com/rtk-ai/rtk/commit/deda44f73607981f3d27ecc6341ce927aab34d37))
+* **gh:** pass through gh pr merge instead of canned response ([#938](https://github.com/rtk-ai/rtk/issues/938)) ([8465ca9](https://github.com/rtk-ai/rtk/commit/8465ca953fa9d70dcc971a941c19465d456eb7d4))
+* **gh:** pass through gh pr merge instead of canned response ([#938](https://github.com/rtk-ai/rtk/issues/938)) ([e1f2845](https://github.com/rtk-ai/rtk/commit/e1f2845df06a8d8b8325945dc4940ec5f530e4cc))
+* **git:** inherit stdin for commit and push to preserve SSH signing ([#733](https://github.com/rtk-ai/rtk/issues/733)) ([eefeae4](https://github.com/rtk-ai/rtk/commit/eefeae45656ff2607c3f519c8eae235e3f0fe411))
+* **git:** inherit stdin for commit and push to preserve SSH signing ([#733](https://github.com/rtk-ai/rtk/issues/733)) ([6cee6c6](https://github.com/rtk-ai/rtk/commit/6cee6c60b80f914ed9505e3925d85cadec43ab97))
+* **git:** preserve full diff hunk headers ([62f4452](https://github.com/rtk-ai/rtk/commit/62f445227679f3df293fe35e9b18cc5ab39d7963))
+* **git:** preserve full diff hunk headers ([09b3ff9](https://github.com/rtk-ai/rtk/commit/09b3ff9424e055f5fe25e535e5b60e077f8344f9))
+* **go:** avoid false build errors from download logs ([9c1cf2f](https://github.com/rtk-ai/rtk/commit/9c1cf2f403534fa7874638b1b983c2d7f918a185))
+* **go:** avoid false build errors from download logs ([d44fd3e](https://github.com/rtk-ai/rtk/commit/d44fd3e034208e3bcd59c2c46f7720eec4f10c98))
+* **go:** cover more build failure shapes ([2425ad6](https://github.com/rtk-ai/rtk/commit/2425ad68e5386d19e5ec9ff1ca151a6d2c9a56d3))
+* **go:** preserve failing test location context ([1481bc5](https://github.com/rtk-ai/rtk/commit/1481bc590924031456a6022510275c29c09e330e))
+* **go:** preserve failing test location context ([374fe64](https://github.com/rtk-ai/rtk/commit/374fe64cfbedcd676733973e81a63a6dfecbb1b7))
+* **go:** restore build error coverage ([1177c9c](https://github.com/rtk-ai/rtk/commit/1177c9c873ac63b6c0bcc9e1b664a705baa0ad7a))
+* **grep:** close subprocess stdin to prevent memory leak ([#897](https://github.com/rtk-ai/rtk/issues/897)) ([7217562](https://github.com/rtk-ai/rtk/commit/72175623551f40b581b4a7f6ed966c1e4a9c7358))
+* **grep:** close subprocess stdin to prevent memory leak ([#897](https://github.com/rtk-ai/rtk/issues/897)) ([09979cf](https://github.com/rtk-ai/rtk/commit/09979cf29701a1b775bcac761d24ec0e055d1bec))
+* **hook_check:** detect missing integrations ([9cf9ccc](https://github.com/rtk-ai/rtk/commit/9cf9ccc1ac39f8bba37e932c7d318a3aa7a34ae9))
+* **init:** remove opt-out instruction from telemetry message ([7571c8e](https://github.com/rtk-ai/rtk/commit/7571c8e101c41ee64c51e2bd64697f85f9142423))
+* **init:** remove telemetry info lines from init output ([7dbef2c](https://github.com/rtk-ai/rtk/commit/7dbef2ce00824d26f2057e4c3c76e429e2e23088))
+* **main:** kill zombie processes + path for rtk md ([d16fc6d](https://github.com/rtk-ai/rtk/commit/d16fc6dacbfec912c21522939b15b7bbd9719487))
+* **main:** kill zombie processes + path for rtk md + missing intergrations ([a919335](https://github.com/rtk-ai/rtk/commit/a919335519ed4a5259a212e56407cb312aa99bac))
+* **merge:** changelog conflicts ([d92c5d2](https://github.com/rtk-ai/rtk/commit/d92c5d264a49483c8d6079e04d946a79bc990a74))
+* **proxy:** kill child process on SIGINT/SIGTERM to prevent orphans ([d813919](https://github.com/rtk-ai/rtk/commit/d813919a24546e044e7844fc7ed05fef4ec24033))
+* **proxy:** kill child process on SIGINT/SIGTERM to prevent orphans ([3318510](https://github.com/rtk-ai/rtk/commit/33185101fc122d0c11a25a4e02ac9f3a7dc7e3bb))
+* **review:** address ChildGuard disarm, stdin dedup, hook masking ([d85fe33](https://github.com/rtk-ai/rtk/commit/d85fe3384b87c16fafd25ec7bcadbff6e69f3f1f))
+* **security:** default to ask when no permission rule matches ([#886](https://github.com/rtk-ai/rtk/issues/886)) ([158c745](https://github.com/rtk-ai/rtk/commit/158c74527f6591d372e40a78cd604d73a20649a9))
+* **security:** default to ask when no permission rule matches ([#886](https://github.com/rtk-ai/rtk/issues/886)) ([41a6c6b](https://github.com/rtk-ai/rtk/commit/41a6c6bf6da78a4754794fdc6a1469df2e327920))
+* **tracking:** use std::env::temp_dir() for compatibility (instead of unix tmp) ([e918661](https://github.com/rtk-ai/rtk/commit/e918661440d7b50321f0535032f52c5e87aaf3cb))
+
+## [Unreleased]
+
+### Features
+
+* **aws:** expand CLI filters from 8 to 25 subcommands — CloudWatch Logs, CloudFormation events, Lambda, IAM, DynamoDB (with type unwrapping), ECS tasks, EC2 security groups, S3API objects, S3 sync/cp, EKS, SQS, Secrets Manager ([#885](https://github.com/rtk-ai/rtk/pull/885))
+* **aws:** add shared runner `run_aws_filtered()` eliminating per-handler boilerplate
+* **tee:** add `force_tee_hint()` — truncated output saves full data to file with recovery hint
+
+## [0.34.3](https://github.com/rtk-ai/rtk/compare/v0.34.2...v0.34.3) (2026-04-02)
+
+
+### Bug Fixes
+
+* **automod:** add auto discovery for cmds ([234909d](https://github.com/rtk-ai/rtk/commit/234909d2c754ade2fdc939b0a1435a8e34ffc305))
+* **ci:** fix validate-docs.sh broken module count check ([bbe3da6](https://github.com/rtk-ai/rtk/commit/bbe3da642b5fc4b065b13a65647ea0ebf5264e65))
+* **cleaning:** constant extract ([aabc016](https://github.com/rtk-ai/rtk/commit/aabc0167bc013fd2d0c61a687580f6e69305500a))
+* **cmds:** migrate remaining exit_code to exit_code_from_output ([ba9fa34](https://github.com/rtk-ai/rtk/commit/ba9fa345f3d1d14bd0af236ec9aa8a9a0e5581d6))
+* **cmds:** more covering for run_filtered ([e48485a](https://github.com/rtk-ai/rtk/commit/e48485adc6a33d12b70664598020595cf7dfcd7e))
+* **docs:** add documentation ([2f7278a](https://github.com/rtk-ai/rtk/commit/2f7278ac5992bf2e84b763fb05642d89900ba495))
+* **docs:** add maintainers docs ([14265b4](https://github.com/rtk-ai/rtk/commit/14265b48c3a15e459a31da11250a51ab5830a508))
+* **refacto-p1:** unified cmds execution flow  (+ rm dead code) ([75bd607](https://github.com/rtk-ai/rtk/commit/75bd607d55235f313855f5fe8c9eceafd73700a7))
+* **refacto-p2:** more standardize ([47a76ea](https://github.com/rtk-ai/rtk/commit/47a76ea35ed2fe02a3600792163f727fa3a94ff2))
+* **refacto-p2:** more standardize ([92c671a](https://github.com/rtk-ai/rtk/commit/92c671a175a5e2bf09720fd1a8591140bcb473a0))
+* **refacto:** wrappers for standardization, exit codes lexer tokenizer, constants, code clean ([bff0258](https://github.com/rtk-ai/rtk/commit/bff02584243f1b73418418b0c05365acf56fbb36))
+* **registry:** quoted env prefix + inline regex cleanup + routing docs ([f3217a4](https://github.com/rtk-ai/rtk/commit/f3217a467b543a3181605b257162f2b3ab5d5df0))
+* **review:** address PR [#910](https://github.com/rtk-ai/rtk/issues/910) review feedback ([0a8b8fd](https://github.com/rtk-ai/rtk/commit/0a8b8fd0693fa504f376146cbbcafe9ddf4632c8))
+* **review:** PR [#934](https://github.com/rtk-ai/rtk/issues/934) ([5bd35a3](https://github.com/rtk-ai/rtk/commit/5bd35a33ad6abe5278749726bed19912664531c2))
+* **review:** PR [#934](https://github.com/rtk-ai/rtk/issues/934) ([bae7930](https://github.com/rtk-ai/rtk/commit/bae79301194bbb48d1cbb39554096c3225f7cb73))
+* **rules:** add wc RtkRule with pattern field for develop compat ([d75e864](https://github.com/rtk-ai/rtk/commit/d75e864f20451a5e17918c75f2ea32672f65e1f4))
+* **standardize:** git+kube sub wrappers run_filtered ([7fd221f](https://github.com/rtk-ai/rtk/commit/7fd221f44660bcf411aa333d2c35a49ff89e7961))
+* **standardize:** merge pattern into rues ([08aabb9](https://github.com/rtk-ai/rtk/commit/08aabb95c3ae6e0b734f696264e1e1a8c0f0b22e))
+
+## [0.34.2](https://github.com/rtk-ai/rtk/compare/v0.34.1...v0.34.2) (2026-03-30)
+
+
+### Bug Fixes
+
+* **emots:** replace 📊 with "Summary:" ([495a152](https://github.com/rtk-ai/rtk/commit/495a152059feabc7b516b96e804757608b87a10a))
+* **refacto-codebase:** technical docs & sub folders ([927daef](https://github.com/rtk-ai/rtk/commit/927daef49b8f771d195201d196378e27e0ee8a2b))
+
+## [0.34.1](https://github.com/rtk-ai/rtk/compare/v0.34.0...v0.34.1) (2026-03-28)
+
+
+### Bug Fixes
+
+* **security:** missing toml pkg ([51f9c88](https://github.com/rtk-ai/rtk/commit/51f9c888b81169309df92f7fa3a6f705d44adcab))
+* **security:** salt device hash for telemetry ([32fdbbb](https://github.com/rtk-ai/rtk/commit/32fdbbbb6923c70d343fab14b4b0ce70424e610f))
+* **security:** set 0600 permissions on salt file ([5eae11d](https://github.com/rtk-ai/rtk/commit/5eae11d16410dc4ff26e97672e5367b14efaab76))
+* **telemetry:** cache salt in-process ([22dc059](https://github.com/rtk-ai/rtk/commit/22dc059310b0408adedc2d1228de339e16ea6c0a))
+* **telemetry:** docs + real info from "rtk init -g" ([33195cc](https://github.com/rtk-ai/rtk/commit/33195cc686318ddcca54edfdd1215bd9fd28f891))
+* **telemetry:** hash + salt ([92996b1](https://github.com/rtk-ai/rtk/commit/92996b127257eae16d3e17179592b2899f19254f))
+
+## [0.34.0](https://github.com/rtk-ai/rtk/compare/v0.33.1...v0.34.0) (2026-03-26)
+
+
+### Features
+
+* **init:** add --copilot flag for GitHub Copilot integration ([9e19aac](https://github.com/rtk-ai/rtk/commit/9e19aac75e790ecbfd1dc5b2d01786f6b9edf506)), closes [#823](https://github.com/rtk-ai/rtk/issues/823)
+
+
+### Bug Fixes
+
+* **diff:** correct truncation overflow count in condense_unified_diff ([5399f83](https://github.com/rtk-ai/rtk/commit/5399f836a5c642121f0f6e7812ff4131d84d0509))
+* **diff:** never truncate diff content — show all changes in full ([80fc29a](https://github.com/rtk-ai/rtk/commit/80fc29a839f51ef605474037e1a8fd86b4aac05a)), closes [#827](https://github.com/rtk-ai/rtk/issues/827)
+* **git:** replace vague truncation markers with exact counts ([185fb97](https://github.com/rtk-ai/rtk/commit/185fb97061517922ea5844d8c6008f2eb86fd55d))
+* **merge:** resolve conflict with develop in diff_cmd.rs ([6a5ae14](https://github.com/rtk-ai/rtk/commit/6a5ae1484b32c38bd99baca925175ae610e3d1e3))
+* **read:** default to no filtering — show full file content ([5e0f3ba](https://github.com/rtk-ai/rtk/commit/5e0f3ba774eab52f8ca2ac603e2ae4eae79b2edc)), closes [#822](https://github.com/rtk-ai/rtk/issues/822)
+* **read:** detect binary files and prevent empty output on filter failure ([8886c14](https://github.com/rtk-ai/rtk/commit/8886c14c9cf97fb4413efec3be8e50fdb84824e9)), closes [#822](https://github.com/rtk-ai/rtk/issues/822)
+* rewrite swift test commands ([599ad25](https://github.com/rtk-ai/rtk/commit/599ad25deb0f8dc9ecab37f4bbe26324dac07b2e))
+* truncation accuracy + Copilot init + binary file detection ([966bcbe](https://github.com/rtk-ai/rtk/commit/966bcbe638be18bbaba4298df985804643f82c85))
+* **truncation:** accurate overflow counts and omission indicators ([58a9633](https://github.com/rtk-ai/rtk/commit/58a963347467613d48db05ad56bc8f1f3a06b65d))
+
+## [Unreleased]
+
+### Bug Fixes
+
+* **wc:** `wc` filter was never invoked by the hook — removed `"wc "` from `IGNORED_PREFIXES` and added registry entry so `wc` commands are rewritten to `rtk wc`
+* **diff:** correct truncation overflow count in condense_unified_diff ([#833](https://github.com/rtk-ai/rtk/pull/833)) ([5399f83](https://github.com/rtk-ai/rtk/commit/5399f83))
+* **git:** replace vague truncation markers with exact counts in log and grep output ([#833](https://github.com/rtk-ai/rtk/pull/833)) ([185fb97](https://github.com/rtk-ai/rtk/commit/185fb97))
+
+## [0.33.1](https://github.com/rtk-ai/rtk/compare/v0.33.0...v0.33.1) (2026-03-25)
+
+
+### Bug Fixes
+
+* **cicd:** dev- prefix for pre-release tags ([522bd64](https://github.com/rtk-ai/rtk/commit/522bd648c8cae41f6cadedcd40a96d879c6ecf0a))
+* **cicd:** use dev- prefix for pre-release tags ([9c21275](https://github.com/rtk-ai/rtk/commit/9c212752fc0401820f8665198f00882684496175))
+* **cicd:** use dev- prefix for pre-release tags to avoid polluting release-please ([32c67e0](https://github.com/rtk-ai/rtk/commit/32c67e01326374f0365602f61542a3639a8f121b))
+* hook security + stderr redirects + version bump ([#807](https://github.com/rtk-ai/rtk/issues/807)) ([0649e97](https://github.com/rtk-ai/rtk/commit/0649e974fb8f27778ef0d22aa97905d9ebc8f03c))
+* **hook:** respect Claude Code deny/ask permission rules on rewrite ([a051a6f](https://github.com/rtk-ai/rtk/commit/a051a6f5e56c7ee59375a365580bced634e29c02))
+* strip trailing stderr redirects before rewrite matching ([#530](https://github.com/rtk-ai/rtk/issues/530)) ([edd9c02](https://github.com/rtk-ai/rtk/commit/edd9c02e892b297a7e349031b61ef971c982b53d))
+* strip trailing stderr redirects before rewrite matching ([#530](https://github.com/rtk-ai/rtk/issues/530)) ([36a6f48](https://github.com/rtk-ai/rtk/commit/36a6f482296d6fc85f8116040a16de2e128733f8))
+
+## [0.33.0-rc.54](https://github.com/rtk-ai/rtk/compare/v0.32.0-rc.54...v0.33.0-rc.54) (2026-03-24)
+
+
+### Features
+
+* **ruby:** add Ruby on Rails support (rspec, rubocop, rake, bundle) ([#724](https://github.com/rtk-ai/rtk/issues/724)) ([15bc0f8](https://github.com/rtk-ai/rtk/commit/15bc0f8d6e135371688d5fd42decc6d8a99454f0))
+
+
+### Bug Fixes
+
+* add telemetry documentation and init notice ([#640](https://github.com/rtk-ai/rtk/issues/640)) ([#788](https://github.com/rtk-ai/rtk/issues/788)) ([0eecee5](https://github.com/rtk-ai/rtk/commit/0eecee5bf35ffd8b13f36a59ec39bd52626948d3))
+* **cargo:** preserve test compile diagnostics ([97b6878](https://github.com/rtk-ai/rtk/commit/97b68783f50d209c2c599ae42cc638520749e668))
+* **cicd:** explicit fetch tag ([3b94b60](https://github.com/rtk-ai/rtk/commit/3b94b602ed24b9ecec597ce001e59f325caaadd4))
+* **cicd:** gete release like tag for pre-release ([53bc81e](https://github.com/rtk-ai/rtk/commit/53bc81e9e6d3d0876fb1a23dbf6f08bc074b68be))
+* **cicd:** issue 668 - pre release tag ([200af43](https://github.com/rtk-ai/rtk/commit/200af436d48dd2539cb00652b082f25c57873c9c))
+* **cicd:** missing doc ([8657494](https://github.com/rtk-ai/rtk/commit/865749438e67f6da7f719d054bf377d857925ad3))
+* **cicd:** pre-release correct tag ([1536667](https://github.com/rtk-ai/rtk/commit/15366678adeece701f38e91204128b070c0e3fc4))
+* **dotnet:** TRX injection for Microsoft.Testing.Platform projects ([8eefef1](https://github.com/rtk-ai/rtk/commit/8eefef1b496035ce898effc5446e6851084d6fa4))
+* **formatter:** show full error message for test failures ([#690](https://github.com/rtk-ai/rtk/issues/690)) ([dc6b026](https://github.com/rtk-ai/rtk/commit/dc6b0260ab4c1bdbccb4b775d879eb473b212c21))
+* **formatter:** show full error message for test failures ([#690](https://github.com/rtk-ai/rtk/issues/690)) ([f7b09fc](https://github.com/rtk-ai/rtk/commit/f7b09fc86a693acf2b52954215ff0c4e6c5d03f9))
+* **gh:** passthrough --comments flag in issue/pr view ([75cd223](https://github.com/rtk-ai/rtk/commit/75cd2232e274f898d8a335ba866fc507ce64b949))
+* **gh:** passthrough --comments flag in issue/pr view ([fdeb09f](https://github.com/rtk-ai/rtk/commit/fdeb09fb93564e795711e9a531d2e2e20187c3a7)), closes [#720](https://github.com/rtk-ai/rtk/issues/720)
+* **gh:** skip compact_diff for --name-only/--stat flags in pr diff ([2ef0690](https://github.com/rtk-ai/rtk/commit/2ef0690767eb733c705e4de56d02c64696a4acc6)), closes [#730](https://github.com/rtk-ai/rtk/issues/730)
+* **gh:** skip compact_diff for --name-only/--stat in pr diff ([c576249](https://github.com/rtk-ai/rtk/commit/c57624931a96181f869645817fdd96bc056da044))
+* **golangci-lint:** add v2 compatibility with runtime version detection ([95a4961](https://github.com/rtk-ai/rtk/commit/95a4961e4aa3ba5307b3dfad246c6168c4caeab8))
+* **golangci:** use resolved_command for version detection, move test fixture to file ([6aa5e90](https://github.com/rtk-ai/rtk/commit/6aa5e90dc466f87c88a2401b4eb2aa0f323379f4))
+* increase signal in git diff, git log, and json filters ([#621](https://github.com/rtk-ai/rtk/issues/621)) ([#708](https://github.com/rtk-ai/rtk/issues/708)) ([4edc3fc](https://github.com/rtk-ai/rtk/commit/4edc3fc0838e25ee6d1754c7e987b5507742f600))
+* **playwright:** add tee_and_hint pass-through on failure ([#690](https://github.com/rtk-ai/rtk/issues/690)) ([b4ccf04](https://github.com/rtk-ai/rtk/commit/b4ccf046f59ce6ed1396e4d8c46f8a35152d6d09))
+* preserve cargo test compile diagnostics ([15d5beb](https://github.com/rtk-ai/rtk/commit/15d5beb9f70caf1f84e9b506faaf840c70c1cf4e))
+* **ruby:** use rails test for positional file args in rtk rake ([ec92c43](https://github.com/rtk-ai/rtk/commit/ec92c43f231eb2321a4b423b0eb8487f98161aac))
+* **ruby:** use rails test for positional file args in rtk rake ([138e914](https://github.com/rtk-ai/rtk/commit/138e91411b4802e445a97429056cca73282d09e1))
+* update Discord invite link ([#711](https://github.com/rtk-ai/rtk/issues/711)) ([#786](https://github.com/rtk-ai/rtk/issues/786)) ([af56573](https://github.com/rtk-ai/rtk/commit/af56573ae2b234123e4685fd945980e644f40fa3))
+
+## [Unreleased]
+
+### Bug Fixes
+
+* **hook:** respect Claude Code deny/ask permission rules on rewrite — hook now checks settings.json before rewriting commands, preventing bypass of user-configured deny/ask permissions
+* **git:** replace symbol prefixes (`* branch`, `+ Staged:`, `~ Modified:`, `? Untracked:`) with plain lowercase labels (`branch:`, `staged:`, `modified:`, `untracked:`) in git status output
+* **ruby:** use `rails test` instead of `rake test` when positional file args are passed — `rake test` ignores positional files and only supports `TEST=path`
+
+### Features
+
+* **ruby:** add RSpec test runner filter with JSON parsing and text fallback (60%+ reduction)
+* **ruby:** add RuboCop linter filter with JSON parsing, grouped by cop/severity (60%+ reduction)
+* **ruby:** add Minitest filter for `rake test` / `rails test` with state machine parser (85-90% reduction)
+* **ruby:** add TOML filter for `bundle install/update` — strip `Using` lines (90%+ reduction)
+* **ruby:** add `ruby_exec()` shared utility for auto-detecting `bundle exec` when Gemfile exists
+* **ruby:** add discover/rewrite rules for rake, rails, rspec, rubocop, and bundle commands
+
+### Bug Fixes
+
+* **cargo:** preserve compile diagnostics when `cargo test` fails before any test suites run
+
+## [0.31.0](https://github.com/rtk-ai/rtk/compare/v0.30.1...v0.31.0) (2026-03-19)
+
+
+### Features
+
+* 9-tool AI agent support + emoji removal ([#704](https://github.com/rtk-ai/rtk/issues/704)) ([737dada](https://github.com/rtk-ai/rtk/commit/737dada4a56c0d7a482cc438e7280340d634f75d))
+
+## [0.30.1](https://github.com/rtk-ai/rtk/compare/v0.30.0...v0.30.1) (2026-03-18)
+
+
+### Bug Fixes
+
+* remove all decorative emojis from CLI output ([#687](https://github.com/rtk-ai/rtk/issues/687)) ([#686](https://github.com/rtk-ai/rtk/issues/686)) ([4792008](https://github.com/rtk-ai/rtk/commit/4792008fc15553cbb9aeaa602f773a5f8f7f7afe))
+
 ## [0.30.0](https://github.com/rtk-ai/rtk/compare/v0.29.0...v0.30.0) (2026-03-16)
 
 
@@ -134,7 +860,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
+* **cargo clippy:** include actionable error details in compact output instead of summary-only counts ([#602](https://github.com/rtk-ai/rtk/issues/602))
 * **curl:** skip JSON schema replacement when schema is larger than original payload ([#297](https://github.com/rtk-ai/rtk/issues/297))
+* **init:** `rtk init -g --uninstall` now removes `<!-- rtk-instructions -->` block from CLAUDE.md ([#384](https://github.com/rtk-ai/rtk/issues/384))
 * **toml-dsl:** fix regex overmatch on `tofu-plan/init/validate/fmt` and `mix-format/compile` — add `(\s|$)` word boundary to prevent matching subcommands (e.g. `tofu planet`, `mix formats`) ([#349](https://github.com/rtk-ai/rtk/issues/349))
 * **toml-dsl:** remove 3 dead built-in filters (`docker-inspect`, `docker-compose-ps`, `pnpm-build`) — Clap routes these commands before `run_fallback`, so the TOML filters never fire ([#351](https://github.com/rtk-ai/rtk/issues/351))
 * **toml-dsl:** `uv-sync` — remove `Resolved` short-circuit; it fires before the package list is printed, hiding installed packages ([#386](https://github.com/rtk-ai/rtk/issues/386))
@@ -189,6 +917,7 @@ breakage, but future rule additions won't take effect until they migrate.
 
 * +48 regression tests covering all command categories: aws, psql, Python, Go, JS/TS,
   compound operators, sudo/env prefixes, registry invariants (607 total, was 559)
+* +5 tests for uninstall `--claude-md` artifact cleanup (614 total)
 
 ## [0.24.0](https://github.com/rtk-ai/rtk/compare/v0.23.0...v0.24.0) (2026-03-04)
 

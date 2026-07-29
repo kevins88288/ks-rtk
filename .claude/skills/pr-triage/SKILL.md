@@ -1,7 +1,15 @@
 ---
+name: pr-triage
 description: >
   PR triage: audit open PRs, deep review selected ones, draft and post review comments.
   Args: "all" to review all, PR numbers to focus (e.g. "42 57"), "en"/"fr" for language, no arg = audit only in French.
+allowed-tools:
+  - Bash
+  - Read
+  - Grep
+  - Glob
+effort: medium
+tags: [triage, pr, github, review, code-review, rtk]
 ---
 
 # PR Triage
@@ -145,7 +153,16 @@ _Externes — Problématiques_ : un des critères suivants :
 
 Après affichage du tableau de triage, copier dans le presse-papier :
 ```bash
-pbcopy <<'EOF'
+# Cross-platform clipboard
+clip() {
+  if command -v pbcopy &>/dev/null; then pbcopy
+  elif command -v xclip &>/dev/null; then xclip -selection clipboard
+  elif command -v wl-copy &>/dev/null; then wl-copy
+  else cat
+  fi
+}
+
+clip <<'EOF'
 {tableau de triage complet}
 EOF
 ```
@@ -207,7 +224,7 @@ prompt: |
 
   Apply your security-guardian and backend-architect skills for this review.
   Additionally, apply the RTK-specific checklist:
-  - lazy_static! regex (no inline Regex::new())
+  - LazyLock<Regex> for fixed patterns reused across calls
   - anyhow::Result + .context() (no unwrap())
   - Fallback to raw command on filter failure
   - Exit code propagation
