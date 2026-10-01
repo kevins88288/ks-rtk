@@ -18,12 +18,13 @@ same problem.
 
 ## Our Customizations
 
-The fork surface is deliberately tiny. Three patches survive as of v0.50.0:
+The fork surface is deliberately tiny. Four patches as of v0.50.0:
 
 | Tag | Location | Purpose |
 |-----|----------|---------|
 | `ks:playwright-reporter` | `src/cmds/js/playwright_cmd.rs` | Strips the split form `--reporter x`, not just `--reporter=x`. Upstream leaves `x` behind as a stray positional, which Playwright treats as a test-path filter and matches nothing. |
 | `ks:truncation-fix` | `src/cmds/system/log_cmd.rs` | Error-line truncation 100 → 200 chars. 100 cut the tail off common errors (docker `...: Permission denied`), hiding the cause. |
+| `ks:grep-h` | `src/main.rs` (`Grep`) | `disable_help_flag`: `-h` is grep's `--no-filename`. The hook rewrites `grep -h X f` to `rtk grep -h X f`, and clap printed rtk help instead of results. Drop when rtk-ai/rtk#3663 lands. |
 | `ks:build-config` | `.cargo/config.toml` | `lto=off` for `x86_64-unknown-linux-gnu` container builds. Not upstreamable (environment-specific). |
 
 ## Sync Risks
@@ -83,6 +84,7 @@ in the 0.3x→0.4x range, so textual cherry-picks across that boundary do not ap
 | 2026-02-22 | Synced to v0.30.0. |
 | 2026-07-29 | Synced to **v0.44.1**. Dropped 8 of 12 fork patches as superseded or obsolete (hook grep-flag stripping, `wc` hook rewrite, `hook-audit`/`wc` CLI wiring, tee UTF-8 truncation, tee integration, grep header wording, CLAUDE.md English override, rustfmt fix). Dropped `fork_tag` tracking + `scripts/fork-stats.sh` deliberately — see below. Kept the four patches above. |
 | 2026-09-30 | Synced to **v0.50.0**. Dropped `ks:llm-friendly`: upstream now pins silent no-match for grep/find in 4 tests, and the message was wrong when grep skips a binary-file match. Agents are told "empty = no match" via CLAUDE.md instead. Kept `ks:playwright-reporter`, `ks:truncation-fix` (now with a test), `ks:build-config`. Known env failure: `git_log_malformed_digit_run_propagates_real_git_error` expects git ≥2.51 wording; OCI has 2.43. |
+| 2026-09-30 | Added `ks:grep-h` + test `dash_h_hides_filenames_like_grep`. |
 
 ### Dropped at the 2026-07-29 sync: `fork_tag` tracking
 

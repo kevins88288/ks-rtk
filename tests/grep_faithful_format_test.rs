@@ -68,6 +68,16 @@ fn no_match_matches_grep() {
     assert_eq_grep_with_and_without_n(&["zzz_no_match_xyz", &f]); // empty stdout, exit 1
 }
 
+// ks:grep-h — `-h` is grep's --no-filename, not rtk's --help. The Claude hook
+// rewrites `grep -h X files` to `rtk grep -h X files`, which printed rtk help.
+#[test]
+fn dash_h_hides_filenames_like_grep() {
+    let d = tempfile::tempdir().unwrap();
+    let a = write(d.path(), "a.txt", "hello one\n");
+    let b = write(d.path(), "b.txt", "hello two\n");
+    assert_eq_grep_with_and_without_n(&["-h", "hello", &a, &b]);
+}
+
 #[test]
 fn nasty_content_is_not_misparsed() {
     let d = tempfile::tempdir().unwrap();
