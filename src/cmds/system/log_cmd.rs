@@ -2,7 +2,7 @@
 
 use crate::core::guard::never_worse;
 use crate::core::tracking;
-use crate::core::truncate::{reduced, CAP_WARNINGS};
+use crate::core::truncate::{CAP_WARNINGS, reduced};
 use anyhow::Result;
 use regex::Regex;
 use std::collections::HashMap;
@@ -243,6 +243,14 @@ fn normalize_log_line(
 mod tests {
     use super::*;
 
+    /// ks:truncation-fix — error lines up to 200 chars keep their tail.
+    #[test]
+    fn long_error_line_keeps_its_cause() {
+        let line = format!("ERROR docker: {}: Permission denied", "x".repeat(120));
+        let out = analyze_logs(&line);
+        assert!(out.contains("Permission denied"), "{out}");
+    }
+
     #[test]
     fn test_analyze_logs() {
         let logs = r#"
@@ -265,8 +273,14 @@ mod tests {
                     2024-01-01 10:00:03 SEVERE: data corruption detected\n\
                     2024-01-01 10:00:04 notice: config reloaded\n";
         let result = analyze_logs(logs);
-        assert!(result.contains("ERRORS"), "critical/alert/emerg/severe should count as errors");
-        assert!(result.contains("WARNINGS"), "notice should count as warning");
+        assert!(
+            result.contains("ERRORS"),
+            "critical/alert/emerg/severe should count as errors"
+        );
+        assert!(
+            result.contains("WARNINGS"),
+            "notice should count as warning"
+        );
     }
 
     #[test]
